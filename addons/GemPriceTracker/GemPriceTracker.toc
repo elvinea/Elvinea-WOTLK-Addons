@@ -1,0 +1,10 @@
+## Interface: 30300
+## Title: Gem Price Tracker
+## Notes: Gem/material price tracker and gold-budget gem kit calculator (Warmane WotLK 3.3.5). Ported from Heros.xlsm "Gem Prices" tab.
+## Author: The Fools
+## Version: 1.0
+## SavedVariables: GemPriceTrackerDB
+
+Data.lua
+Core.lua
+UI.lua
