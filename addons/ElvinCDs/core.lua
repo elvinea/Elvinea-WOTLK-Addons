@@ -344,27 +344,30 @@ layoutTower = function()
     colCount = colCount + #g
   end
 
-  -- Position each column and chain its windows together:
+  -- Position each column. Window heights are computed explicitly from the
+  -- bar count (matching what fetchCooldowns sets) and each window is placed
+  -- at an absolute offset, so stacking never depends on frame-height
+  -- propagation between anchored frames (which was causing overlap).
   local dir = columnsLeft and -1 or 1
+  local sp  = options.spacing or 0
   for ci, column in ipairs(columns) do
     local colX = originX + dir * (ci - 1) * colWidth
-    local prev = nil
+    local y = originY
     for _, w in ipairs(column) do
       local f = w.frame
+      local n = #w.bars
+      local wh = n * options.height
+      if n > 1 then wh = wh + (n - 1) * sp end
+      if wh < options.height then wh = options.height end
+      f:SetHeight(wh)
       f:ClearAllPoints()
-      if not prev then
-        if growUp then
-          f:SetPoint('BOTTOMLEFT', UIParent, 'TOPLEFT', colX, originY)
-        else
-          f:SetPoint('TOPLEFT', UIParent, 'TOPLEFT', colX, originY)
-        end
-        if ci == 1 then towerAnchor = f end
-      elseif growUp then
-        f:SetPoint('BOTTOMLEFT', prev, 'TOPLEFT', 0, vgap)
+      if growUp then
+        f:SetPoint('BOTTOMLEFT', UIParent, 'TOPLEFT', colX, y)
+        y = y + wh + vgap
       else
-        f:SetPoint('TOPLEFT', prev, 'BOTTOMLEFT', 0, -vgap)
+        f:SetPoint('TOPLEFT', UIParent, 'TOPLEFT', colX, y)
+        y = y - wh - vgap
       end
-      prev = f
     end
   end
 end
@@ -430,6 +433,15 @@ local function fetchCooldowns()
         local height = 0
 
         local anchor = _G[n..'Bars']
+
+        -- Hide any leftover bar frames from a previous layout so stale or
+        -- duplicate bars don't show through under the current ones:
+        local kids = { window:GetChildren() }
+        for _, child in ipairs(kids) do
+          if child.GetObjectType and child:GetObjectType() == 'StatusBar' then
+            child:Hide()
+          end
+        end
 
         for k, b in ipairs(w.bars) do
           local bar = _G[b.name]

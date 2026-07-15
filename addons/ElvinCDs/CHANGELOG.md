@@ -1,4 +1,4 @@
-# Changelog
+# Changelog — !ElvinCDs
 
 All notable changes to this fork of **!ElvinCDs** are documented here.
 
@@ -11,8 +11,8 @@ Base version: `0.4b`.
 ### Added
 
 - **Locked tower layout.** All spell windows now behave as a single tower:
-  dragging any one of them moves the whole set together, and they keep their
-  relative positions instead of being placed independently.
+  dragging moves the whole set together, and they keep their relative
+  positions instead of being placed independently.
 - **Automatic vertical stacking.** Windows stack one under another instead of
   overlapping on the same spot, and the stack reflows automatically when a
   window grows or shrinks (for example when a second player of the same class
@@ -51,9 +51,18 @@ Base version: `0.4b`.
 ### Fixed
 
 - **Snap-to-edge bug.** Dropping the tower near the middle of the screen no
-  longer causes it to jump to a screen corner. Movement now tracks the cursor
-  directly instead of relying on the game's frame anchoring, which was
-  re-anchoring to the nearest corner on release.
+  longer jumps to a screen corner. Movement now tracks the cursor directly
+  instead of relying on the game's frame anchoring, which was re-anchoring to
+  the nearest corner on release.
+- **Overlapping windows.** Windows with several player bars (a spell used by
+  multiple people) could be overlapped by the next window in the tower. Each
+  window's height is now calculated directly from its bar count and every window
+  is placed at an explicit position, so stacking no longer depends on
+  frame-height propagation between anchored frames.
+- **Doubled names / stray empty bars.** Leftover bar frames from a previous
+  layout stayed attached to a window when it was rebuilt, so a fresh bar could
+  render on top of a stale one (doubled text) and old bars could linger as empty
+  rows. All existing bars are now hidden before the current set is drawn.
 
 ### Removed
 
@@ -65,7 +74,7 @@ Base version: `0.4b`.
 
 - Several layout values are fixed defaults that may need tuning in-game:
   the horizontal gap between columns (8px), the vertical gap between windows
-  (`spacing + 4`), and the bar icon size (`bar height − 2`).
+  (`bar spacing + 4`), and the bar icon size (`bar height − 2`).
 - The custom message applies to the main "use on me" action (menu label, its
   whisper, and Ctrl+click). The "Use Now" wording for blind/self-cast spells and
   the "on &lt;player&gt;" targeting submenu still use their default phrasing.
@@ -73,4 +82,5 @@ Base version: `0.4b`.
   spells that are not part of a built-in class list are grouped together at the
   end of the tower.
 - After updating, run `/ecd reset all` once to clear any window positions saved
-  by older versions so the new tower layout starts from a clean state.
+  by older versions so the new tower layout starts from a clean state. A
+  `/reload` also clears any accumulated leftover bar frames.
