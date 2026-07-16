@@ -19,6 +19,18 @@ right-click a player row to cycle their role.
 
 ---
 
+## v2.11
+- Two whisper options per player: **"whisper gems & enchants"** (enchant/gem/socket
+  fixes only) and **"whisper ALL problems"** (also talents + Heroic upgrades). Dropped
+  the "please fix" header — each line is sent standalone, prefixed "GearCheck:".
+
+## v2.10
+- Whisper reworked to actually **list the fixes**: each problem is sent on its own
+  line (enchants, gems, empty sockets, wrong talents, Heroic upgrades), staggered to
+  avoid the chat throttle. Off-BiS gear is no longer whispered (it isn't a gem/enchant
+  fix). "missing enchant" now names the wanted enchant type (e.g. "want Attack
+  Power/Strength/Agility") so the player knows what to apply.
+
 ## v2.9
 - **Whisper button** — expand a player and click "» whisper these problems to
   <name>" to send them a chunked whisper of their gear/talent issues (missing

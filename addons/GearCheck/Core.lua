@@ -365,7 +365,12 @@ function GC:Validate(data)
         if sd.item then
             -- missing enchant on a core slot
             if self.CORE_ENCHANT_SLOTS[sd.id] and not sd.enchanted then
-                table.insert(sd.problems, "missing enchant")
+                local keys = self.ENCH_OK[data.type] and self.ENCH_OK[data.type][sd.slot]
+                if keys then
+                    table.insert(sd.problems, "missing enchant (want " .. table.concat(keys, "/") .. ")")
+                else
+                    table.insert(sd.problems, "missing enchant")
+                end
             elseif self.CORE_ENCHANT_SLOTS[sd.id] and sd.enchanted then
                 -- wrong enchant for role: GC.ENCH_OK[type][slot] is a loose keyword hint
                 -- (e.g. Physical/Head = "Attack Power"). Profession-exclusive enchants
@@ -446,41 +451,43 @@ function GC:ClearResults()
     if self.Render then self:Render() end
 end
 
--- Whisper a single player their gear/talent problems (chunked to fit whisper length).
-function GC:WhisperProblems(name)
+-- Whisper a player their problems. mode "gems" = enchant/gem/socket fixes only;
+-- mode "all" = also talents + Heroic upgrades. Each problem is its own line (no header).
+function GC:WhisperProblems(name, mode)
     if not name or name == "" then return end
     local d = self.results[name]
     if not d then return end
-    local probs = {}
+    local fixes = {}
     for _, sd in ipairs(d.slots or {}) do
         if sd.problems then
-            for _, p in ipairs(sd.problems) do probs[#probs+1] = sd.slot .. ": " .. p end
+            for _, p in ipairs(sd.problems) do fixes[#fixes + 1] = sd.slot .. " - " .. p end
         end
-        if sd.preBis then probs[#probs+1] = sd.slot .. ": pre-BiS (get Heroic version)" end
     end
-    if d.talents and not d.talents.noref and (d.talents.wrong or 0) > 0 then
-        local tl = {}
-        for _, ln in ipairs(d.talents.lines or {}) do
-            if ln.status == "extra" then tl[#tl+1] = ln.name .. " " .. ln.got .. " (drop)"
-            elseif ln.status ~= "ok" then tl[#tl+1] = ln.name .. " " .. ln.got .. "/" .. ln.need end
+    if mode == "all" then
+        if d.talents and not d.talents.noref and (d.talents.wrong or 0) > 0 then
+            local tl = {}
+            for _, ln in ipairs(d.talents.lines or {}) do
+                if ln.status == "extra" then tl[#tl + 1] = "drop " .. ln.name
+                elseif ln.status ~= "ok" then tl[#tl + 1] = ln.name .. " " .. ln.got .. "/" .. ln.need end
+            end
+            if #tl > 0 then fixes[#fixes + 1] = "Talents (" .. (d.talentSpec or "?") .. ") - " .. table.concat(tl, ", ") end
         end
-        probs[#probs+1] = "talents (" .. (d.talentSpec or "?") .. "): " .. table.concat(tl, ", ")
+        local preb = {}
+        for _, sd in ipairs(d.slots or {}) do if sd.preBis then preb[#preb + 1] = sd.slot end end
+        if #preb > 0 then fixes[#fixes + 1] = "Upgrade to Heroic - " .. table.concat(preb, ", ") end
     end
-    if (d.offbis or 0) > 0 then probs[#probs+1] = d.offbis .. " off-BiS item(s)" end
 
-    if #probs == 0 then
-        SendChatMessage("GearCheck: your gear looks good — no issues found.", "WHISPER", nil, name)
+    if #fixes == 0 then
+        local what = (mode == "all") and "gear, gems, enchants and talents" or "gems and enchants"
+        SendChatMessage("GearCheck: your " .. what .. " look good!", "WHISPER", nil, name)
         self:Print("Whispered " .. name .. ": no issues.")
         return
     end
-    SendChatMessage("GearCheck — please fix:", "WHISPER", nil, name)
-    local line = ""
-    for _, p in ipairs(probs) do
-        if #line + #p + 3 > 240 then SendChatMessage(line, "WHISPER", nil, name); line = "" end
-        line = (line == "") and ("- " .. p) or (line .. "  |  " .. p)
+    for i, f in ipairs(fixes) do
+        local msg = "GearCheck: " .. f
+        self:After(0.25 * (i - 1), function() SendChatMessage(msg, "WHISPER", nil, name) end)
     end
-    if line ~= "" then SendChatMessage(line, "WHISPER", nil, name) end
-    self:Print("Whispered " .. name .. " (" .. #probs .. " item(s)).")
+    self:Print("Whispered " .. name .. " their " .. #fixes .. " fix(es).")
 end
 
 -- Re-resolve any gems that were still caching when we scanned, then re-validate/re-render.

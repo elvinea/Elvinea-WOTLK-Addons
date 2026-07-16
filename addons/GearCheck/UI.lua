@@ -42,7 +42,7 @@ function GC:BuildUI()
 
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     title:SetPoint("TOP", 0, -16)
-    title:SetText("GearCheck  |cff888888v2.9|r")
+    title:SetText("GearCheck  |cff888888v2.11|r")
     f.title = title
 
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
@@ -118,8 +118,10 @@ function GC:GetLine(i)
             elseif self2.kind == "item" and self2.itemKey then
                 GC.expandedItem[self2.itemKey] = not GC.expandedItem[self2.itemKey]
                 GC:Render()
-            elseif self2.kind == "whisper" then
-                GC:WhisperProblems(self2.pname)
+            elseif self2.kind == "whisper_gems" then
+                GC:WhisperProblems(self2.pname, "gems")
+            elseif self2.kind == "whisper_all" then
+                GC:WhisperProblems(self2.pname, "all")
             end
         end)
         self.lines[i] = ln
@@ -278,7 +280,8 @@ function GC:Render()
         put("player", 2, ROW_H, header, name)
 
         if self.expanded[name] and d.slots then
-            put("whisper", 16, DET_H, "|cff66ccff» whisper these problems to " .. name .. "|r", name, nil)
+            put("whisper_gems", 16, DET_H, "|cff66ccff» whisper gems & enchants to " .. name .. "|r", name, nil)
+            put("whisper_all", 16, DET_H, "|cff66ccff» whisper ALL problems to " .. name .. "|r", name, nil)
             for _, sd in ipairs(d.slots) do
                 if sd.item then
                     local key = name .. "\0" .. sd.slot

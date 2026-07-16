@@ -2,7 +2,7 @@
 ## Title: GearCheck
 ## Notes: Scan & check gear, gems and enchants for self or raid (WotLK 3.3.5a / Warmane)
 ## Author: The Fools
-## Version: 2.9
+## Version: 2.11
 ## SavedVariablesPerCharacter: GearCheckDB
 Data.lua
 Items.lua
