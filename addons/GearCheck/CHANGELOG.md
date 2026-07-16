@@ -19,6 +19,18 @@ right-click a player row to cycle their role.
 
 ---
 
+## v2.9
+- **Whisper button** — expand a player and click "» whisper these problems to
+  <name>" to send them a chunked whisper of their gear/talent issues (missing
+  enchants, empty sockets, off-role gems, pre-BiS upgrades, wrong talents, off-BiS
+  count). Player-by-player.
+- Fixed the "wrong enchant" false-flag on cloaks (and other slots): the role check
+  now accepts **any** of several valid enchants per slot instead of one, so Greater
+  Speed / Major Agility / Mighty Armor etc. on a cloak no longer read as wrong.
+- Feral **Bear vs Cat** now distinguished by the presence of *Protector of the Pack*
+  (a bear-only talent) instead of shapeshift form, so inspected bears are correctly
+  read as tanks (role, profile, gems/enchants and talent spec all follow).
+
 ## v2.8
 - Talent line render is now guarded — if anything errors it shows an inline
   "render error" instead of silently dropping the line (makes load/render issues

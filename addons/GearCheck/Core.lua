@@ -141,12 +141,12 @@ function GC:ReadTalents(inspect)
 end
 
 -- Grade a unit's talents against its spec's reference build.
-function GC:GradeTalents(data, inspect)
+function GC:GradeTalents(data, inspect, have)
     local build = self.TALENT_BUILD and self.TALENT_BUILD[data.class] and data.talentSpec
                   and self.TALENT_BUILD[data.class][data.talentSpec]
     local t = { spec = data.talentSpec, lines = {}, wrong = 0 }
     if not build then t.noref = true; data.talents = t; return end
-    local have = self:ReadTalents(inspect)
+    have = have or self:ReadTalents(inspect)
     -- reference talents: check each is at the wanted rank
     local names = {}
     for name in pairs(build) do names[#names+1] = name end
@@ -196,11 +196,18 @@ function GC:ScanUnit(unit, inspect)
     local name = UnitName(unit) or "?"
     local _, class = UnitClass(unit)
     local role, tree = self:RoleForUnit(unit, class, inspect)
+    -- Read talents once; use them to split Feral Bear vs Cat (they share the Feral
+    -- tree, so tree/form can't tell them apart on inspected units). "Protector of the
+    -- Pack" is a bear/tank-only talent — its presence means Bear.
+    local talents = self:ReadTalents(inspect)
+    if class == "DRUID" and tree == 2 then
+        role = ((talents["Protector of the Pack"] or 0) > 0) and "Tank" or "Melee"
+    end
     local data = { name = name, class = class, role = role, tree = tree,
                    type = self:TypeFor(role, class), profile = self:ProfileForUnit(class, tree, role),
                    talentSpec = self:SpecForTalents(class, tree, role),
                    slots = {}, issues = 0, offbis = 0, prebis = 0, scanned = true }
-    local ok = pcall(function() self:GradeTalents(data, inspect) end)
+    local ok = pcall(function() self:GradeTalents(data, inspect, talents) end)
     if not ok and not data.talents then
         data.talents = { spec = data.talentSpec, noref = true }
     end
@@ -368,11 +375,17 @@ function GC:Validate(data)
                 -- gives Attack Power but the Physical/Back keyword is "Agility") — any
                 -- bracketed profession tag in the enchant name exempts it from this check.
                 local isProfEnchant = sd.specialEnch or (sd.enchName and sd.enchName:find("%[%a+%]"))
-                local keyword = self.ENCH_OK[data.type] and self.ENCH_OK[data.type][sd.slot]
-                if keyword and not isProfEnchant then
+                local keys = self.ENCH_OK[data.type] and self.ENCH_OK[data.type][sd.slot]
+                if keys and not isProfEnchant then
                     local combined = ((sd.enchName or "") .. " " .. (sd.enchRaw or "")):lower()
-                    if combined:match("%S") and not combined:find(keyword:lower(), 1, true) then
-                        table.insert(sd.problems, "wrong enchant (need " .. keyword .. ")")
+                    if combined:match("%S") then
+                        local match = false
+                        for _, kw in ipairs(keys) do
+                            if combined:find(kw:lower(), 1, true) then match = true break end
+                        end
+                        if not match then
+                            table.insert(sd.problems, "wrong enchant (want " .. table.concat(keys, "/") .. ")")
+                        end
                     end
                 end
             end
@@ -431,6 +444,43 @@ function GC:ClearResults()
     wipe(self.expanded)
     wipe(self.expandedItem)
     if self.Render then self:Render() end
+end
+
+-- Whisper a single player their gear/talent problems (chunked to fit whisper length).
+function GC:WhisperProblems(name)
+    if not name or name == "" then return end
+    local d = self.results[name]
+    if not d then return end
+    local probs = {}
+    for _, sd in ipairs(d.slots or {}) do
+        if sd.problems then
+            for _, p in ipairs(sd.problems) do probs[#probs+1] = sd.slot .. ": " .. p end
+        end
+        if sd.preBis then probs[#probs+1] = sd.slot .. ": pre-BiS (get Heroic version)" end
+    end
+    if d.talents and not d.talents.noref and (d.talents.wrong or 0) > 0 then
+        local tl = {}
+        for _, ln in ipairs(d.talents.lines or {}) do
+            if ln.status == "extra" then tl[#tl+1] = ln.name .. " " .. ln.got .. " (drop)"
+            elseif ln.status ~= "ok" then tl[#tl+1] = ln.name .. " " .. ln.got .. "/" .. ln.need end
+        end
+        probs[#probs+1] = "talents (" .. (d.talentSpec or "?") .. "): " .. table.concat(tl, ", ")
+    end
+    if (d.offbis or 0) > 0 then probs[#probs+1] = d.offbis .. " off-BiS item(s)" end
+
+    if #probs == 0 then
+        SendChatMessage("GearCheck: your gear looks good — no issues found.", "WHISPER", nil, name)
+        self:Print("Whispered " .. name .. ": no issues.")
+        return
+    end
+    SendChatMessage("GearCheck — please fix:", "WHISPER", nil, name)
+    local line = ""
+    for _, p in ipairs(probs) do
+        if #line + #p + 3 > 240 then SendChatMessage(line, "WHISPER", nil, name); line = "" end
+        line = (line == "") and ("- " .. p) or (line .. "  |  " .. p)
+    end
+    if line ~= "" then SendChatMessage(line, "WHISPER", nil, name) end
+    self:Print("Whispered " .. name .. " (" .. #probs .. " item(s)).")
 end
 
 -- Re-resolve any gems that were still caching when we scanned, then re-validate/re-render.

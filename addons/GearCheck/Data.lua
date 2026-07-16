@@ -261,23 +261,30 @@ GC.ENCH_BYNAME = {
     ["reticulated armor webbing"] = { "Reticulated Armor Webbing [Eng]",  "+885 Armor" },
 }
 
+-- Acceptable enchant keyword(s) per role/slot. A slot passes if the enchant text
+-- contains ANY of the listed keywords (cloaks, boots, weapons have several valid
+-- enchants). Missing-enchant detection is separate and exact.
 GC.ENCH_OK = {
     Tank = {
-        Head="Stamina", Shoulder="Stamina", Back="Armor", Chest="Health",
-        Wrist="Stamina", Hands="Threat", Legs="Stamina", Feet="Stamina",
-        ["Main Hand"]="Blocking", },
+        Head={"Stamina","Defense"}, Shoulder={"Stamina","Defense"}, Back={"Armor","Defense","Agility","Stamina"},
+        Chest={"Health","Stamina","Stats"}, Wrist={"Stamina"}, Hands={"Threat","Parry","Armor","Strength"},
+        Legs={"Stamina","Agility"}, Feet={"Stamina","Agility","Speed","Health","Hit"},
+        ["Main Hand"]={"Blocking","Defense","Stamina","Agility","Armor"}, },
     Physical = {
-        Head="Attack Power", Shoulder="Attack Power", Back="Agility", Chest="All Stats",
-        Wrist="Attack Power", Hands="Attack Power", Legs="Attack Power", Feet="Hit Rating",
-        ["Main Hand"]="Berserking", Ranged="Critical Strike", },
+        Head={"Attack Power","Strength","Agility"}, Shoulder={"Attack Power","Strength","Agility","Critical"},
+        Back={"Agility","Haste","Speed","Attack Power","Armor"}, Chest={"Stats","Health"},
+        Wrist={"Attack Power","Strength","Agility","Assault"}, Hands={"Attack Power","Strength","Haste","Crusher"},
+        Legs={"Attack Power","Agility","Critical"}, Feet={"Hit","Agility","Speed","Stamina","Assault","Critical"},
+        ["Main Hand"]={"Berserking","Mongoose","Massacre","Agility","Attack Power","Haste"}, Ranged={"Critical","Hit"}, },
     Caster = {
-        Head="Spell Power", Shoulder="Spell Power", Back="Spell Power", Chest="All Stats",
-        Wrist="Spell Power", Hands="Spell Power", Legs="Spell Power", Feet="Hit Rating",
-        ["Main Hand"]="Spell Power", },
+        Head={"Spell Power","Critical"}, Shoulder={"Spell Power","Critical"},
+        Back={"Spell Power","Haste","Speed","Agility"}, Chest={"Stats"},
+        Wrist={"Spell Power"}, Hands={"Spell Power","Haste"}, Legs={"Spell Power","Spirit","Stamina"},
+        Feet={"Hit","Spell Power","Speed","Stamina","Critical"}, ["Main Hand"]={"Spell Power","Haste"}, },
     Healer = {
-        Head="Spell Power", Shoulder="Spell Power", Back="Speed", Chest="All Stats",
-        Wrist="Spell Power", Hands="Spell Power", Legs="Spell Power", Feet="Stamina",
-        ["Main Hand"]="Spell Power", },
+        Head={"Spell Power"}, Shoulder={"Spell Power"}, Back={"Speed","Haste","Spell Power"}, Chest={"Stats"},
+        Wrist={"Spell Power","Spirit"}, Hands={"Spell Power","Haste"}, Legs={"Spell Power","Spirit","Stamina"},
+        Feet={"Stamina","Speed","Spirit","Hit"}, ["Main Hand"]={"Spell Power"}, },
 }
 -- Class + primary tree -> profile (for BiS item checking). Bear/DK-tank handled in Core.
 GC.TREE_PROFILE = {
