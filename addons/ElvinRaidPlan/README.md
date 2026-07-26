@@ -46,10 +46,16 @@ The game writes this file on **logout or /reload**, so log out or reload to be
 sure changes are kept — don't just force-close the client.
 
 ## Maps included
-All 12 Icecrown Citadel boss arenas. If a map appears under the wrong boss,
-it's a quick label fix. Other raids (Naxxramas, Ulduar, Trial of the Crusader,
-Onyxia, VoA, Obsidian Sanctum, Eye of Eternity, Ruby Sanctum) can be added the
-same way.
+- **Icecrown Citadel** — all 12 bosses
+- **Trial of the Crusader** — Coliseum arena (Beasts, Jaraxxus, Champions,
+  Twin Val'kyr) + Anub'arak ice pit
+- **Ulduar** — all 14 bosses (map/boss pairings matched by best guess; some may
+  need swapping, and Algalon has no map yet)
+- **Eye of Eternity** — Malygos
+
+If a map appears under the wrong boss, it's a quick label fix. Remaining raids
+(Naxxramas, Onyxia, VoA, Obsidian Sanctum, Ruby Sanctum) can be added the same
+way.
 
 ## Notes
 - Plans are account-wide; there's no cross-player sharing yet.

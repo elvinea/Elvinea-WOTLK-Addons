@@ -1,5 +1,11 @@
 # ElvinRaidPlan — Changelog
 
+## v0.5
+- Added three more raids to the Map picker: **Trial of the Crusader** (Coliseum
+  + Anub'arak ice pit), **Ulduar** (all 14 bosses), and **Eye of Eternity**
+  (Malygos). Ulduar maps are matched by best guess for now — some boss/map
+  pairings may need swapping, and Algalon has no map yet.
+
 ## v0.4.3
 - Added an **Open** button: browse and load any saved plan from a scrollable
   list (the current plan is marked with a green arrow). Previously you could

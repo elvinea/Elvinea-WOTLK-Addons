@@ -2,7 +2,7 @@
 ## Title: ElvinRaidPlan
 ## Notes: Drag-and-drop raid strategy planner (inspired by raidplan.io), in-game canvas for WotLK.
 ## Author: Elvinea
-## Version: 0.4.3
+## Version: 0.5
 ## SavedVariables: ElvinRaidPlanDB
 
 Core.lua

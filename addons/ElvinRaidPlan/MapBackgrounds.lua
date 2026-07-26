@@ -45,6 +45,45 @@ ERP.BossArenas = {
 			{ name = "The Lich King",         file = "icc_lichking" },
 		},
 	},
+	{
+		raid = "Trial of the Crusader",
+		-- Most ToC fights happen in the one Coliseum arena; Anub'arak drops into
+		-- the ice pit beneath it.
+		bosses = {
+			{ name = "Northrend Beasts", file = "toc_coliseum" },
+			{ name = "Lord Jaraxxus",    file = "toc_coliseum" },
+			{ name = "Faction Champions", file = "toc_coliseum" },
+			{ name = "Twin Val'kyr",     file = "toc_coliseum" },
+			{ name = "Anub'arak",        file = "toc_anubarak" },
+		},
+	},
+	{
+		raid = "Ulduar",
+		-- Maps identified by number for now (ulduar_01..13); names are the real
+		-- boss order. Some map/boss pairings may need swapping — easy to fix.
+		bosses = {
+			{ name = "Flame Leviathan",       file = "ulduar_11" },
+			{ name = "Ignis the Furnace Master", file = "ulduar_02" },
+			{ name = "Razorscale",            file = "ulduar_01" },
+			{ name = "XT-002 Deconstructor",  file = "ulduar_03" },
+			{ name = "Assembly of Iron",      file = "ulduar_04" },
+			{ name = "Kologarn",              file = "ulduar_05" },
+			{ name = "Auriaya",               file = "ulduar_09" },
+			{ name = "Hodir",                 file = "ulduar_08" },
+			{ name = "Thorim",                file = "ulduar_06" },
+			{ name = "Freya",                 file = "ulduar_10" },
+			{ name = "Mimiron",               file = "ulduar_07" },
+			{ name = "General Vezax",         file = "ulduar_12" },
+			{ name = "Yogg-Saron",            file = "ulduar_13" },
+			{ name = "Algalon the Observer",  file = "ulduar_00" }, -- no map yet
+		},
+	},
+	{
+		raid = "Eye of Eternity",
+		bosses = {
+			{ name = "Malygos", file = "eoe_malygos" },
+		},
+	},
 }
 
 local function GetFlatColor(key)
