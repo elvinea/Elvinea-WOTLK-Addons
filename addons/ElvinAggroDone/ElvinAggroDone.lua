@@ -1,5 +1,5 @@
 --[[
-	AggroDone
+	ElvinAggroDone
 	WotLK 3.3.5 (Warmane-compatible) rewrite of the "Trick or Treat" concept.
 
 	What it does:
@@ -23,7 +23,7 @@
 	    /ad show       - show it
 	    /ad hide       - hide it
 	    /ad clear      - wipe the log
-	    /ad config     - open the options panel (Interface Options > AddOns > AggroDone)
+	    /ad config     - open the options panel (Interface Options > AddOns > ElvinAggroDone)
 
 	    /ad whisper status               - show current whisper settings (chat-only alternative to /ad config)
 	    /ad whisper mode full            - full report (timing + damage)
@@ -47,7 +47,7 @@
 	    destGUID, destName, destFlags, <event-specific args...>
 --]]
 
-local ADDON_NAME = "AggroDone"
+local ADDON_NAME = "ElvinAggroDone"
 
 -- ---------------------------------------------------------------------
 -- Spell data
@@ -92,23 +92,23 @@ local WHISPER_DEFAULTS = {
 	},
 }
 
-AggroDoneDB = AggroDoneDB or { shown = false, point = nil, whisper = WHISPER_DEFAULTS }
+ElvinAggroDoneDB = ElvinAggroDoneDB or { shown = false, point = nil, whisper = WHISPER_DEFAULTS }
 
 -- Fill in any missing whisper settings (covers upgrades from before this existed,
 -- or new scenario keys added later).
-AggroDoneDB.whisper = AggroDoneDB.whisper or {}
-AggroDoneDB.whisper.mode = AggroDoneDB.whisper.mode or WHISPER_DEFAULTS.mode
-AggroDoneDB.whisper.scenarios = AggroDoneDB.whisper.scenarios or {}
+ElvinAggroDoneDB.whisper = ElvinAggroDoneDB.whisper or {}
+ElvinAggroDoneDB.whisper.mode = ElvinAggroDoneDB.whisper.mode or WHISPER_DEFAULTS.mode
+ElvinAggroDoneDB.whisper.scenarios = ElvinAggroDoneDB.whisper.scenarios or {}
 for key, default in pairs(WHISPER_DEFAULTS.scenarios) do
-	if AggroDoneDB.whisper.scenarios[key] == nil then
-		AggroDoneDB.whisper.scenarios[key] = default
+	if ElvinAggroDoneDB.whisper.scenarios[key] == nil then
+		ElvinAggroDoneDB.whisper.scenarios[key] = default
 	end
 end
 
 -- ---------------------------------------------------------------------
 -- Popup window
 -- ---------------------------------------------------------------------
-local window = CreateFrame("Frame", "AggroDoneWindow", UIParent)
+local window = CreateFrame("Frame", "ElvinAggroDoneWindow", UIParent)
 window:SetSize(360, 220)
 window:SetPoint("CENTER", 0, 150)
 window:SetMovable(true)
@@ -118,7 +118,7 @@ window:SetScript("OnDragStart", window.StartMoving)
 window:SetScript("OnDragStop", function(self)
 	self:StopMovingOrSizing()
 	local point, _, _, x, y = self:GetPoint()
-	AggroDoneDB.point = { point = point, x = x, y = y }
+	ElvinAggroDoneDB.point = { point = point, x = x, y = y }
 end)
 window:SetBackdrop({
 	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -130,16 +130,16 @@ window:Hide()
 
 local title = window:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 title:SetPoint("TOP", 0, -14)
-title:SetText("AggroDone - Tricks / MD Log")
+title:SetText("ElvinAggroDone - Tricks / MD Log")
 
 local closeButton = CreateFrame("Button", nil, window, "UIPanelCloseButton")
 closeButton:SetPoint("TOPRIGHT", -4, -4)
 closeButton:SetScript("OnClick", function()
 	window:Hide()
-	AggroDoneDB.shown = false
+	ElvinAggroDoneDB.shown = false
 end)
 
-local msgFrame = CreateFrame("ScrollingMessageFrame", "AggroDoneMsgFrame", window)
+local msgFrame = CreateFrame("ScrollingMessageFrame", "ElvinAggroDoneMsgFrame", window)
 msgFrame:SetPoint("TOPLEFT", 20, -36)
 msgFrame:SetPoint("BOTTOMRIGHT", -30, 16)
 msgFrame:SetFontObject(GameFontHighlightSmall)
@@ -151,7 +151,7 @@ msgFrame:SetScript("OnMouseWheel", function(self, delta)
 	if delta > 0 then self:ScrollUp() else self:ScrollDown() end
 end)
 
-local scrollBar = CreateFrame("Slider", "AggroDoneScrollBar", window, "UIPanelScrollBarTemplate")
+local scrollBar = CreateFrame("Slider", "ElvinAggroDoneScrollBar", window, "UIPanelScrollBarTemplate")
 scrollBar:SetPoint("TOPRIGHT", -12, -36)
 scrollBar:SetPoint("BOTTOMRIGHT", -12, 16)
 scrollBar:SetMinMaxValues(0, 0)
@@ -168,17 +168,17 @@ local function LogToWindow(text)
 end
 
 local function ShowWindow()
-	if AggroDoneDB.point then
+	if ElvinAggroDoneDB.point then
 		window:ClearAllPoints()
-		window:SetPoint(AggroDoneDB.point.point, UIParent, AggroDoneDB.point.point, AggroDoneDB.point.x, AggroDoneDB.point.y)
+		window:SetPoint(ElvinAggroDoneDB.point.point, UIParent, ElvinAggroDoneDB.point.point, ElvinAggroDoneDB.point.x, ElvinAggroDoneDB.point.y)
 	end
 	window:Show()
-	AggroDoneDB.shown = true
+	ElvinAggroDoneDB.shown = true
 end
 
 local function HideWindow()
 	window:Hide()
-	AggroDoneDB.shown = false
+	ElvinAggroDoneDB.shown = false
 end
 
 -- ---------------------------------------------------------------------
@@ -211,7 +211,7 @@ local function FinishEntry(entry)
 			scenarioKey = iAmCaster and "mdbyme" or "mdonme"
 		end
 
-		local whisper = AggroDoneDB.whisper
+		local whisper = ElvinAggroDoneDB.whisper
 		local scenarioOn = whisper.scenarios[scenarioKey]
 
 		if whisper.mode ~= "off" and scenarioOn then
@@ -220,18 +220,18 @@ local function FinishEntry(entry)
 			if whisper.mode == "damage" then
 				-- Bonus-damage-only: skip the timing readout entirely.
 				whisperMsg = string.format(
-					"[AggroDone] %s bonus damage: %d dmg in %ds.",
+					"[ElvinAggroDone] %s bonus damage: %d dmg in %ds.",
 					entry.info.name, entry.damage, entry.info.window
 				)
 			else
 				if iAmCaster then
 					whisperMsg = string.format(
-						"[AggroDone] Used %s on you, %s - you did %d dmg in the %ds window.",
+						"[ElvinAggroDone] Used %s on you, %s - you did %d dmg in the %ds window.",
 						entry.info.name, timingText, entry.damage, entry.info.window
 					)
 				else
 					whisperMsg = string.format(
-						"[AggroDone] Got your %s, %s - I did %d dmg in the %ds window.",
+						"[ElvinAggroDone] Got your %s, %s - I did %d dmg in the %ds window.",
 						entry.info.name, timingText, entry.damage, entry.info.window
 					)
 				end
@@ -244,7 +244,7 @@ local function FinishEntry(entry)
 			end
 		end
 
-		DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99AggroDone:|r " .. logLine)
+		DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99ElvinAggroDone:|r " .. logLine)
 	end
 end
 
@@ -275,7 +275,7 @@ end)
 frame:SetScript("OnEvent", function(self, event, ...)
 	if event == "PLAYER_LOGIN" then
 		playerGUID = UnitGUID("player")
-		if AggroDoneDB.shown then
+		if ElvinAggroDoneDB.shown then
 			ShowWindow()
 		end
 		return
@@ -337,7 +337,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
 end)
 
 -- ---------------------------------------------------------------------
--- Options panel (Interface Options > AddOns > AggroDone)
+-- Options panel (Interface Options > AddOns > ElvinAggroDone)
 -- ---------------------------------------------------------------------
 local SCENARIO_LABELS = {
 	totbyme = "Tricks by you",
@@ -346,19 +346,19 @@ local SCENARIO_LABELS = {
 	mdonme  = "MD on you",
 }
 
-local optionsPanel = CreateFrame("Frame", "AggroDoneOptionsPanel", UIParent)
-optionsPanel.name = "AggroDone"
+local optionsPanel = CreateFrame("Frame", "ElvinAggroDoneOptionsPanel", UIParent)
+optionsPanel.name = "ElvinAggroDone"
 optionsPanel:Hide()
 
 local panelTitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 panelTitle:SetPoint("TOPLEFT", 16, -16)
-panelTitle:SetText("AggroDone")
+panelTitle:SetText("ElvinAggroDone")
 
 local panelSubtitle = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
 panelSubtitle:SetPoint("TOPLEFT", panelTitle, "BOTTOMLEFT", 0, -8)
 panelSubtitle:SetWidth(500)
 panelSubtitle:SetJustifyH("LEFT")
-panelSubtitle:SetText("Controls when AggroDone whispers you or the other person about Tricks of the Trade / Misdirection usage. The popup window log (/ad show) always records everything regardless of these settings.")
+panelSubtitle:SetText("Controls when ElvinAggroDone whispers you or the other person about Tricks of the Trade / Misdirection usage. The popup window log (/ad show) always records everything regardless of these settings.")
 
 local modeLabel = optionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 modeLabel:SetPoint("TOPLEFT", panelSubtitle, "BOTTOMLEFT", 0, -20)
@@ -370,7 +370,7 @@ local MODE_OPTIONS = {
 	{ text = "Off (no whispers at all)", value = "off" },
 }
 
-local modeDropdown = CreateFrame("Frame", "AggroDoneModeDropdown", optionsPanel, "UIDropDownMenuTemplate")
+local modeDropdown = CreateFrame("Frame", "ElvinAggroDoneModeDropdown", optionsPanel, "UIDropDownMenuTemplate")
 modeDropdown:SetPoint("TOPLEFT", modeLabel, "BOTTOMLEFT", -16, -4)
 UIDropDownMenu_SetWidth(modeDropdown, 220)
 
@@ -380,7 +380,7 @@ UIDropDownMenu_Initialize(modeDropdown, function(self, level)
 		info.text = opt.text
 		info.value = opt.value
 		info.func = function(btn)
-			AggroDoneDB.whisper.mode = btn.value
+			ElvinAggroDoneDB.whisper.mode = btn.value
 			UIDropDownMenu_SetSelectedValue(modeDropdown, btn.value)
 		end
 		UIDropDownMenu_AddButton(info, level)
@@ -397,25 +397,25 @@ local SCENARIO_ORDER = { "totonme", "totbyme", "mdonme", "mdbyme" }
 local scenarioChecks = {}
 local prevAnchor = scenarioLabel
 for _, key in ipairs(SCENARIO_ORDER) do
-	local check = CreateFrame("CheckButton", "AggroDoneCheck" .. key, optionsPanel, "UICheckButtonTemplate")
+	local check = CreateFrame("CheckButton", "ElvinAggroDoneCheck" .. key, optionsPanel, "UICheckButtonTemplate")
 	check:SetPoint("TOPLEFT", prevAnchor, "BOTTOMLEFT", 0, -6)
 	_G[check:GetName() .. "Text"]:SetText(SCENARIO_LABELS[key])
 	check:SetScript("OnClick", function(self)
-		AggroDoneDB.whisper.scenarios[key] = self:GetChecked() and true or false
+		ElvinAggroDoneDB.whisper.scenarios[key] = self:GetChecked() and true or false
 	end)
 	scenarioChecks[key] = check
 	prevAnchor = check
 end
 
 optionsPanel:SetScript("OnShow", function(self)
-	UIDropDownMenu_SetSelectedValue(modeDropdown, AggroDoneDB.whisper.mode)
+	UIDropDownMenu_SetSelectedValue(modeDropdown, ElvinAggroDoneDB.whisper.mode)
 	for _, opt in ipairs(MODE_OPTIONS) do
-		if opt.value == AggroDoneDB.whisper.mode then
+		if opt.value == ElvinAggroDoneDB.whisper.mode then
 			UIDropDownMenu_SetText(modeDropdown, opt.text)
 		end
 	end
 	for key, check in pairs(scenarioChecks) do
-		check:SetChecked(AggroDoneDB.whisper.scenarios[key])
+		check:SetChecked(ElvinAggroDoneDB.whisper.scenarios[key])
 	end
 end)
 
@@ -437,8 +437,8 @@ end
 -- Slash commands
 -- ---------------------------------------------------------------------
 local function PrintWhisperStatus()
-	local whisper = AggroDoneDB.whisper
-	DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99AggroDone|r whisper mode: " .. whisper.mode)
+	local whisper = ElvinAggroDoneDB.whisper
+	DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99ElvinAggroDone|r whisper mode: " .. whisper.mode)
 	for _, key in ipairs({ "totbyme", "totonme", "mdbyme", "mdonme" }) do
 		DEFAULT_CHAT_FRAME:AddMessage(string.format(
 			"  %s: %s", SCENARIO_LABELS[key], whisper.scenarios[key] and "on" or "off"
@@ -469,25 +469,25 @@ local function SlashHandler(msg)
 
 		if sub == "mode" then
 			if arg == "full" or arg == "damage" or arg == "off" then
-				AggroDoneDB.whisper.mode = arg
-				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99AggroDone|r whisper mode set to: " .. arg)
+				ElvinAggroDoneDB.whisper.mode = arg
+				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99ElvinAggroDone|r whisper mode set to: " .. arg)
 			else
-				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99AggroDone|r usage: /ad whisper mode full|damage|off")
+				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99ElvinAggroDone|r usage: /ad whisper mode full|damage|off")
 			end
-		elseif AggroDoneDB.whisper.scenarios[sub] ~= nil then
+		elseif ElvinAggroDoneDB.whisper.scenarios[sub] ~= nil then
 			local value = OnOff(arg)
 			if value == nil then
-				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99AggroDone|r usage: /ad whisper " .. sub .. " on|off")
+				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99ElvinAggroDone|r usage: /ad whisper " .. sub .. " on|off")
 			else
-				AggroDoneDB.whisper.scenarios[sub] = value
+				ElvinAggroDoneDB.whisper.scenarios[sub] = value
 				DEFAULT_CHAT_FRAME:AddMessage(string.format(
-					"|cff33ff99AggroDone|r %s: %s", SCENARIO_LABELS[sub], value and "on" or "off"
+					"|cff33ff99ElvinAggroDone|r %s: %s", SCENARIO_LABELS[sub], value and "on" or "off"
 				))
 			end
 		elseif sub == "status" or sub == "" then
 			PrintWhisperStatus()
 		else
-			DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99AggroDone|r unknown whisper option: " .. sub)
+			DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99ElvinAggroDone|r unknown whisper option: " .. sub)
 		end
 	else
 		if window:IsShown() then

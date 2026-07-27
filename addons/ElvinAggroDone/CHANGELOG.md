@@ -1,4 +1,13 @@
-# AggroDone Changelog
+# ElvinAggroDone Changelog
+
+## 1.3 - 2026-07-15
+- Renamed addon from AggroDone to ElvinAggroDone (folder, .toc, Lua file,
+  internal frame names, chat prefix all updated for consistency).
+- **Saved variable renamed**: AggroDoneDB -> ElvinAggroDoneDB. This means
+  whisper mode/scenario settings will reset to defaults on first login
+  after this update (old AggroDoneDB data isn't migrated). Re-set them via
+  `/ad config` if needed.
+- No functional changes otherwise.
 
 ## 1.2 - 2026-07-15
 - Added a proper Interface Options panel (Interface Options > AddOns >

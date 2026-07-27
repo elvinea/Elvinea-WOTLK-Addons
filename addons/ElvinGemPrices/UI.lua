@@ -1,11 +1,11 @@
-GPT = GPT or {}
+EGP = EGP or {}
 
 local FRAME_W = 470
 local CONTENT_W = 430
 local ROW_H = 20
 local HEADER_H = 22
 
-GPT.widgets = {
+EGP.widgets = {
     materials = {},
     cutgems   = {},
     kit       = { rows = {} },
@@ -52,7 +52,7 @@ local function CreateNumberEditBox(parent, width, initial, onCommit)
         local v = tonumber(self:GetText())
         if v then
             self.commit(v)
-            GPT_Recalc()
+            EGP_Recalc()
         else
             self:SetText(tostring(initial or 0))
         end
@@ -67,7 +67,7 @@ local function CreateCheck(parent, checked, onClick)
     cb:SetChecked(checked)
     cb:SetScript("OnClick", function(self)
         onClick(self:GetChecked() and true or false)
-        GPT_Recalc()
+        EGP_Recalc()
     end)
     return cb
 end
@@ -79,9 +79,9 @@ local mainFrame, content
 local sectionList = {} -- { key, title, header, content, build }
 
 local function ToggleSection(key)
-    local db = GPT.db
+    local db = EGP.db
     db.sections[key] = not db.sections[key]
-    GPT.Layout()
+    EGP.Layout()
 end
 
 local function CreateSectionHeader(parentContent, key, title)
@@ -95,7 +95,7 @@ local function CreateSectionHeader(parentContent, key, title)
     header:SetScript("OnLeave", function(self) self.fs:SetTextColor(1, 0.82, 0) end)
 
     local function updateText()
-        local open = GPT.db.sections[key]
+        local open = EGP.db.sections[key]
         fs:SetText((open and "|cffffd200[-]|r " or "|cffffd200[+]|r ") .. title)
     end
     header.updateText = updateText
@@ -108,7 +108,7 @@ end
 -- ------------------------------------------------------------
 local function BuildMaterialsSection(c)
     local y = -4
-    for i, m in ipairs(GPT.Materials) do
+    for i, m in ipairs(EGP.Materials) do
         local row = CreateFrame("Frame", nil, c)
         row:SetSize(CONTENT_W, ROW_H)
         row:SetPoint("TOPLEFT", 4, y)
@@ -117,15 +117,15 @@ local function BuildMaterialsSection(c)
         nameFS:SetPoint("LEFT", 0, 0)
         nameFS:SetWidth(220)
 
-        local eb = CreateNumberEditBox(row, 50, GPT.db.materialPrice[m.key], function(v)
-            GPT.db.materialPrice[m.key] = v
+        local eb = CreateNumberEditBox(row, 50, EGP.db.materialPrice[m.key], function(v)
+            EGP.db.materialPrice[m.key] = v
         end)
         eb:SetPoint("LEFT", 230, 0)
 
         local gLabel = CreateLabel(row, "g", 12)
         gLabel:SetPoint("LEFT", eb, "RIGHT", 4, 0)
 
-        GPT.widgets.materials[m.key] = { eb = eb }
+        EGP.widgets.materials[m.key] = { eb = eb }
         y = y - ROW_H
     end
     return -y + 6
@@ -146,7 +146,7 @@ local function BuildCutGemsSection(c)
     local h4 = CreateLabel(hdr, "Profit", 11, {0.7,0.7,0.7}); h4:SetPoint("LEFT", 320, 0)
     y = y - ROW_H
 
-    for _, g in ipairs(GPT.CutGems) do
+    for _, g in ipairs(EGP.CutGems) do
         local row = CreateFrame("Frame", nil, c)
         row:SetSize(CONTENT_W, ROW_H)
         row:SetPoint("TOPLEFT", 4, y)
@@ -155,8 +155,8 @@ local function BuildCutGemsSection(c)
         nameFS:SetWidth(150)
         nameFS:SetPoint("LEFT", 0, 0)
 
-        local sellEB = CreateNumberEditBox(row, 45, GPT.db.gemSell[g.key], function(v)
-            GPT.db.gemSell[g.key] = v
+        local sellEB = CreateNumberEditBox(row, 45, EGP.db.gemSell[g.key], function(v)
+            EGP.db.gemSell[g.key] = v
         end)
         sellEB:SetPoint("LEFT", 150, 0)
 
@@ -168,7 +168,7 @@ local function BuildCutGemsSection(c)
         profitFS:SetPoint("LEFT", 320, 0)
         profitFS:SetWidth(80)
 
-        GPT.widgets.cutgems[g.key] = { sellEB = sellEB, matCostFS = matCostFS, profitFS = profitFS }
+        EGP.widgets.cutgems[g.key] = { sellEB = sellEB, matCostFS = matCostFS, profitFS = profitFS }
         y = y - ROW_H
     end
     return -y + 6
@@ -185,11 +185,11 @@ local function BuildKitSection(c)
     budgetRow:SetPoint("TOPLEFT", 4, y)
     local bLabel = CreateLabel(budgetRow, "Gold Budget:")
     bLabel:SetPoint("LEFT", 0, 0)
-    local budgetEB = CreateNumberEditBox(budgetRow, 65, GPT.db.budget, function(v)
-        GPT.db.budget = v
+    local budgetEB = CreateNumberEditBox(budgetRow, 65, EGP.db.budget, function(v)
+        EGP.db.budget = v
     end)
     budgetEB:SetPoint("LEFT", 110, 0)
-    GPT.widgets.kit.budgetEB = budgetEB
+    EGP.widgets.kit.budgetEB = budgetEB
     y = y - ROW_H - 4
 
     local note = CreateLabel(c, "Check = include. Manual Qty > 0 locks that gem; 0 = auto-distribute.", 10, {0.6,0.6,0.6})
@@ -210,7 +210,7 @@ local function BuildKitSection(c)
     h[7] = CreateLabel(hdr, "Value", 10, {0.7,0.7,0.7}); h[7]:SetPoint("LEFT", 320, 0)
     y = y - ROW_H
 
-    for _, g in ipairs(GPT.CutGems) do
+    for _, g in ipairs(EGP.CutGems) do
         local row = CreateFrame("Frame", nil, c)
         row:SetSize(CONTENT_W, ROW_H)
         row:SetPoint("TOPLEFT", 4, y)
@@ -219,14 +219,14 @@ local function BuildKitSection(c)
         nameFS:SetWidth(105)
         nameFS:SetPoint("LEFT", 0, 0)
 
-        local kitRow = GPT.db.kit[g.key]
+        local kitRow = EGP.db.kit[g.key]
         local cb = CreateCheck(row, kitRow.include, function(checked)
-            GPT.db.kit[g.key].include = checked
+            EGP.db.kit[g.key].include = checked
         end)
         cb:SetPoint("LEFT", 100, 0)
 
         local manualEB = CreateNumberEditBox(row, 40, kitRow.manualQty, function(v)
-            GPT.db.kit[g.key].manualQty = v
+            EGP.db.kit[g.key].manualQty = v
         end)
         manualEB:SetPoint("LEFT", 132, 0)
 
@@ -246,7 +246,7 @@ local function BuildKitSection(c)
         valueFS:SetWidth(80)
         valueFS:SetPoint("LEFT", 320, 0)
 
-        GPT.widgets.kit.rows[g.key] = {
+        EGP.widgets.kit.rows[g.key] = {
             cb = cb, manualEB = manualEB, qtyFS = qtyFS,
             stacksFS = stacksFS, priceFS = priceFS, valueFS = valueFS,
         }
@@ -261,13 +261,13 @@ local function BuildKitSection(c)
     totalLabel:SetPoint("LEFT", 230, 0)
     local totalFS = CreateLabel(totalsRow, "")
     totalFS:SetPoint("LEFT", 320, 0)
-    GPT.widgets.kit.totalValueFS = totalFS
+    EGP.widgets.kit.totalValueFS = totalFS
     y = y - ROW_H
 
     local statusFS = CreateLabel(c, "", 11)
     statusFS:SetPoint("TOPLEFT", 4, y)
     statusFS:SetWidth(CONTENT_W - 8)
-    GPT.widgets.kit.statusFS = statusFS
+    EGP.widgets.kit.statusFS = statusFS
     y = y - ROW_H
 
     return -y + 6
@@ -290,7 +290,7 @@ local function BuildSmallKitSection(c)
     local h6 = CreateLabel(hdr, "Value", 10, {0.7,0.7,0.7}); h6:SetPoint("LEFT", 320, 0)
     y = y - ROW_H
 
-    for _, s in ipairs(GPT.SmallKit) do
+    for _, s in ipairs(EGP.SmallKit) do
         local row = CreateFrame("Frame", nil, c)
         row:SetSize(CONTENT_W, ROW_H)
         row:SetPoint("TOPLEFT", 4, y)
@@ -299,14 +299,14 @@ local function BuildSmallKitSection(c)
         nameFS:SetWidth(125)
         nameFS:SetPoint("LEFT", 0, 0)
 
-        local skRow = GPT.db.smallKit[s.key]
+        local skRow = EGP.db.smallKit[s.key]
         local cb = CreateCheck(row, skRow.include, function(checked)
-            GPT.db.smallKit[s.key].include = checked
+            EGP.db.smallKit[s.key].include = checked
         end)
         cb:SetPoint("LEFT", 120, 0)
 
         local qtyEB = CreateNumberEditBox(row, 45, skRow.qty, function(v)
-            GPT.db.smallKit[s.key].qty = v
+            EGP.db.smallKit[s.key].qty = v
         end)
         qtyEB:SetPoint("LEFT", 150, 0)
 
@@ -322,7 +322,7 @@ local function BuildSmallKitSection(c)
         valueFS:SetWidth(80)
         valueFS:SetPoint("LEFT", 320, 0)
 
-        GPT.widgets.smallkit.rows[s.key] = {
+        EGP.widgets.smallkit.rows[s.key] = {
             cb = cb, qtyEB = qtyEB, stacksFS = stacksFS, priceFS = priceFS, valueFS = valueFS,
         }
         y = y - ROW_H
@@ -336,7 +336,7 @@ local function BuildSmallKitSection(c)
     totalLabel:SetPoint("LEFT", 210, 0)
     local totalFS = CreateLabel(totalsRow, "")
     totalFS:SetPoint("LEFT", 320, 0)
-    GPT.widgets.smallkit.totalValueFS = totalFS
+    EGP.widgets.smallkit.totalValueFS = totalFS
     y = y - ROW_H
 
     return -y + 6
@@ -345,7 +345,7 @@ end
 -- ------------------------------------------------------------
 -- Layout: position headers/content based on collapse state
 -- ------------------------------------------------------------
-function GPT.Layout()
+function EGP.Layout()
     local y = -4
     for _, sec in ipairs(sectionList) do
         sec.header:ClearAllPoints()
@@ -353,7 +353,7 @@ function GPT.Layout()
         sec.header.updateText()
         y = y - HEADER_H
 
-        local open = GPT.db.sections[sec.key]
+        local open = EGP.db.sections[sec.key]
         if open then
             sec.content:ClearAllPoints()
             sec.content:SetPoint("TOPLEFT", content, "TOPLEFT", 0, y)
@@ -369,12 +369,12 @@ end
 -- ------------------------------------------------------------
 -- Refresh: push calculated values into the widgets
 -- ------------------------------------------------------------
-function GPT.RefreshUI()
+function EGP.RefreshUI()
     if not content then return end
 
-    for _, g in ipairs(GPT.CutGems) do
-        local w = GPT.widgets.cutgems[g.key]
-        local calc = GPT.calc.cutGems[g.key]
+    for _, g in ipairs(EGP.CutGems) do
+        local w = EGP.widgets.cutgems[g.key]
+        local calc = EGP.calc.cutGems[g.key]
         if w and calc then
             w.matCostFS:SetText(string.format("%.0fg", calc.matCost))
             if calc.profit >= 0 then
@@ -386,57 +386,57 @@ function GPT.RefreshUI()
         end
     end
 
-    for _, g in ipairs(GPT.CutGems) do
-        local w = GPT.widgets.kit.rows[g.key]
-        local calc = GPT.calc.kit[g.key]
+    for _, g in ipairs(EGP.CutGems) do
+        local w = EGP.widgets.kit.rows[g.key]
+        local calc = EGP.calc.kit[g.key]
         if w and calc then
             w.qtyFS:SetText(tostring(calc.qty))
             w.stacksFS:SetText(tostring(calc.stacks))
-            w.priceFS:SetText(string.format("%.0fg", GPT.db.gemSell[g.key]))
+            w.priceFS:SetText(string.format("%.0fg", EGP.db.gemSell[g.key]))
             w.valueFS:SetText(string.format("%.0fg", calc.value))
         end
     end
-    if GPT.widgets.kit.totalValueFS then
-        GPT.widgets.kit.totalValueFS:SetText(string.format("%.0fg", GPT.calc.kitTotalValue))
+    if EGP.widgets.kit.totalValueFS then
+        EGP.widgets.kit.totalValueFS:SetText(string.format("%.0fg", EGP.calc.kitTotalValue))
     end
-    if GPT.widgets.kit.statusFS then
-        local budget = tonumber(GPT.db.budget) or 0
-        if GPT.calc.kitOverBudget then
-            GPT.widgets.kit.statusFS:SetTextColor(1, 0.3, 0.3)
-            GPT.widgets.kit.statusFS:SetText(string.format("Over budget by %.0fg", GPT.calc.kitTotalValue - budget))
+    if EGP.widgets.kit.statusFS then
+        local budget = tonumber(EGP.db.budget) or 0
+        if EGP.calc.kitOverBudget then
+            EGP.widgets.kit.statusFS:SetTextColor(1, 0.3, 0.3)
+            EGP.widgets.kit.statusFS:SetText(string.format("Over budget by %.0fg", EGP.calc.kitTotalValue - budget))
         else
-            GPT.widgets.kit.statusFS:SetTextColor(0.2, 1, 0.2)
-            GPT.widgets.kit.statusFS:SetText(string.format("Under budget - %.0fg remaining", budget - GPT.calc.kitTotalValue))
+            EGP.widgets.kit.statusFS:SetTextColor(0.2, 1, 0.2)
+            EGP.widgets.kit.statusFS:SetText(string.format("Under budget - %.0fg remaining", budget - EGP.calc.kitTotalValue))
         end
     end
 
-    for _, s in ipairs(GPT.SmallKit) do
-        local w = GPT.widgets.smallkit.rows[s.key]
-        local calc = GPT.calc.smallKit[s.key]
+    for _, s in ipairs(EGP.SmallKit) do
+        local w = EGP.widgets.smallkit.rows[s.key]
+        local calc = EGP.calc.smallKit[s.key]
         if w and calc then
             w.stacksFS:SetText(tostring(calc.stacks))
             w.priceFS:SetText(string.format("%.0fg", calc.price))
             w.valueFS:SetText(string.format("%.0fg", calc.value))
         end
     end
-    if GPT.widgets.smallkit.totalValueFS then
-        GPT.widgets.smallkit.totalValueFS:SetText(string.format("%.0fg", GPT.calc.smallKitTotalValue))
+    if EGP.widgets.smallkit.totalValueFS then
+        EGP.widgets.smallkit.totalValueFS:SetText(string.format("%.0fg", EGP.calc.smallKitTotalValue))
     end
 end
 
 -- ------------------------------------------------------------
 -- Build the frame
 -- ------------------------------------------------------------
-function GPT.BuildUI()
+function EGP.BuildUI()
     if mainFrame then return end
 
-    mainFrame = CreateFrame("Frame", "GemPriceTrackerFrame", UIParent)
-    local savedSize = GPT.db.frameSize or { w = FRAME_W, h = 560 }
+    mainFrame = CreateFrame("Frame", "ElvinGemPricesFrame", UIParent)
+    local savedSize = EGP.db.frameSize or { w = FRAME_W, h = 560 }
     mainFrame:SetSize(savedSize.w, savedSize.h)
     mainFrame:SetResizable(true)
     mainFrame:SetMinResize(FRAME_W, 300)
     mainFrame:SetMaxResize(900, 1000)
-    local pos = GPT.db.framePos
+    local pos = EGP.db.framePos
     mainFrame:SetPoint(pos.point, UIParent, pos.point, pos.x, pos.y)
     mainFrame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -451,13 +451,13 @@ function GPT.BuildUI()
     mainFrame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, _, x, y = self:GetPoint()
-        GPT.db.framePos = { point = point, x = x, y = y }
+        EGP.db.framePos = { point = point, x = x, y = y }
     end)
     mainFrame:SetClampedToScreen(true)
     mainFrame:Hide()
-    tinsert(UISpecialFrames, "GemPriceTrackerFrame")
+    tinsert(UISpecialFrames, "ElvinGemPricesFrame")
 
-    local title = CreateLabel(mainFrame, "Gem & Material Price Tracker", 14)
+    local title = CreateLabel(mainFrame, "Elvin Gem Prices", 14)
     title:SetPoint("TOP", 0, -18)
 
     local closeBtn = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
@@ -473,13 +473,13 @@ function GPT.BuildUI()
     end)
     resizeGrip:SetScript("OnMouseUp", function()
         mainFrame:StopMovingOrSizing()
-        GPT.db.frameSize = { w = mainFrame:GetWidth(), h = mainFrame:GetHeight() }
+        EGP.db.frameSize = { w = mainFrame:GetWidth(), h = mainFrame:GetHeight() }
     end)
 
     local hint = CreateLabel(mainFrame, "Click a section header to collapse/expand it.", 10, {0.6,0.6,0.6})
     hint:SetPoint("TOP", 0, -34)
 
-    local scroll = CreateFrame("ScrollFrame", "GemPriceTrackerScroll", mainFrame, "UIPanelScrollFrameTemplate")
+    local scroll = CreateFrame("ScrollFrame", "ElvinGemPricesScroll", mainFrame, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 16, -52)
     scroll:SetPoint("BOTTOMRIGHT", -34, 16)
 
@@ -503,18 +503,18 @@ function GPT.BuildUI()
         table.insert(sectionList, { key = d.key, header = header, content = secContent, height = h })
     end
 
-    GPT.Layout()
-    GPT.RefreshUI()
+    EGP.Layout()
+    EGP.RefreshUI()
 end
 
-function GPT.ToggleFrame()
+function EGP.ToggleFrame()
     if not mainFrame then
-        GPT.BuildUI()
+        EGP.BuildUI()
     end
     if mainFrame:IsShown() then
         mainFrame:Hide()
     else
         mainFrame:Show()
-        GPT.RefreshUI()
+        EGP.RefreshUI()
     end
 end

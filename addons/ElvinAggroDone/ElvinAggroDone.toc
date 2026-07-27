@@ -1,8 +1,8 @@
 ## Interface: 30300
-## Title: AggroDone
+## Title: ElvinAggroDone
 ## Notes: Tracks Tricks of the Trade / Misdirection timing and bonus damage. Whispers the other person when you're the caster or target; logs everything else to a popup window.
 ## Author: James
-## Version: 1.2
-## SavedVariables: AggroDoneDB
+## Version: 1.3
+## SavedVariables: ElvinAggroDoneDB
 
-AggroDone.lua
+ElvinAggroDone.lua

@@ -1,8 +1,8 @@
-GPT = GPT or {}
+EGP = EGP or {}
 
 -- Raw materials (Eternals + uncommon "feeder" gems used in rare gem recipes).
 -- Order matches the "Raw Materials" column on the Heros.xlsm Gem Prices tab.
-GPT.Materials = {
+EGP.Materials = {
     { key = "eternal_air",     name = "Eternal Air",     price = 30 },
     { key = "eternal_fire",    name = "Eternal Fire",    price = 35 },
     { key = "eternal_shadow",  name = "Eternal Shadow",  price = 30 },
@@ -17,7 +17,7 @@ GPT.Materials = {
 
 -- Cut (rare) gems, their default sell price, and the raw material recipe
 -- used to compute Mat Cost / Profit. recipe = { {materialKey, qty}, ... }
-GPT.CutGems = {
+EGP.CutGems = {
     { key = "ametrine",         name = "Ametrine",         sell = 90,  recipe = { { "eternal_shadow", 1 }, { "monarch_topaz", 1 } } },
     { key = "cardinal_ruby",    name = "Cardinal Ruby",    sell = 125, recipe = { { "eternal_fire", 1 },    { "scarlet_ruby", 1 } } },
     { key = "dreadstone",       name = "Dreadstone",       sell = 55,  recipe = { { "eternal_shadow", 1 }, { "twilight_opal", 1 } } },
@@ -28,7 +28,7 @@ GPT.CutGems = {
 
 -- Small Gem Kit: quick qty/price/value calculator for the uncommon feeder
 -- gems themselves (prices come from Materials above).
-GPT.SmallKit = {
+EGP.SmallKit = {
     { key = "autumns_glow",   name = "Autumn's Glow",   qty = 440 },
     { key = "monarch_topaz",  name = "Monarch Topaz",   qty = 360 },
     { key = "scarlet_ruby",   name = "Scarlet Ruby",    qty = 400 },

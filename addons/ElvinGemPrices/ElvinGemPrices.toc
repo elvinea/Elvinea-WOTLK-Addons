@@ -1,9 +1,9 @@
 ## Interface: 30300
-## Title: Gem Price Tracker
+## Title: Elvin Gem Prices
 ## Notes: Gem/material price tracker and gold-budget gem kit calculator (Warmane WotLK 3.3.5). Ported from Heros.xlsm "Gem Prices" tab.
 ## Author: The Fools
-## Version: 1.0
-## SavedVariables: GemPriceTrackerDB
+## Version: 1.1
+## SavedVariables: ElvinGemPricesDB
 
 Data.lua
 Core.lua

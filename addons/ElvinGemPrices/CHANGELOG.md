@@ -1,6 +1,15 @@
 # Changelog
 
-All notable changes to the GemPriceTracker addon.
+All notable changes to the ElvinGemPrices addon (formerly GemPriceTracker).
+
+## 1.1
+
+- Renamed addon from GemPriceTracker to ElvinGemPrices (folder, .toc title,
+  internal `GPT` table and globals, chat prefix all updated for consistency).
+- **Saved variable renamed**: `GemPriceTrackerDB` -> `ElvinGemPricesDB`. Prices,
+  budget, and section settings reset to defaults on first login after this update
+  (old `GemPriceTrackerDB` data isn't migrated).
+- No functional changes otherwise.
 
 ## 1.0.0
 

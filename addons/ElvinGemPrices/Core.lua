@@ -1,4 +1,4 @@
-GPT = GPT or {}
+EGP = EGP or {}
 
 local DEFAULTS_SECTIONS = {
     materials = true,
@@ -10,26 +10,26 @@ local DEFAULTS_SECTIONS = {
 -- ============================================================
 -- SavedVariables init
 -- ============================================================
-function GPT_InitDB()
-    GemPriceTrackerDB = GemPriceTrackerDB or {}
-    local db = GemPriceTrackerDB
+function EGP_InitDB()
+    ElvinGemPricesDB = ElvinGemPricesDB or {}
+    local db = ElvinGemPricesDB
 
     db.materialPrice = db.materialPrice or {}
-    for _, m in ipairs(GPT.Materials) do
+    for _, m in ipairs(EGP.Materials) do
         if db.materialPrice[m.key] == nil then
             db.materialPrice[m.key] = m.price
         end
     end
 
     db.gemSell = db.gemSell or {}
-    for _, g in ipairs(GPT.CutGems) do
+    for _, g in ipairs(EGP.CutGems) do
         if db.gemSell[g.key] == nil then
             db.gemSell[g.key] = g.sell
         end
     end
 
     db.kit = db.kit or {}
-    for _, g in ipairs(GPT.CutGems) do
+    for _, g in ipairs(EGP.CutGems) do
         if db.kit[g.key] == nil then
             db.kit[g.key] = { include = true, manualQty = 0 }
         end
@@ -37,7 +37,7 @@ function GPT_InitDB()
     db.budget = db.budget or 20000
 
     db.smallKit = db.smallKit or {}
-    for _, s in ipairs(GPT.SmallKit) do
+    for _, s in ipairs(EGP.SmallKit) do
         if db.smallKit[s.key] == nil then
             db.smallKit[s.key] = { include = true, qty = s.qty }
         end
@@ -57,13 +57,13 @@ function GPT_InitDB()
         db.frameSize = { w = 470, h = 560 }
     end
 
-    GPT.db = db
+    EGP.db = db
 end
 
 -- ============================================================
--- Calculated results, refreshed by GPT_Recalc()
+-- Calculated results, refreshed by EGP_Recalc()
 -- ============================================================
-GPT.calc = {
+EGP.calc = {
     cutGems  = {},   -- key -> { matCost, profit }
     kit      = {},   -- key -> { qty, stacks, value }
     kitTotalValue = 0,
@@ -73,18 +73,18 @@ GPT.calc = {
 }
 
 local function matPrice(key)
-    return GPT.db.materialPrice[key] or 0
+    return EGP.db.materialPrice[key] or 0
 end
 
 local function recalcCutGems()
-    for _, g in ipairs(GPT.CutGems) do
+    for _, g in ipairs(EGP.CutGems) do
         local cost = 0
         for _, comp in ipairs(g.recipe) do
             local mKey, qty = comp[1], comp[2]
             cost = cost + matPrice(mKey) * qty
         end
-        local sell = GPT.db.gemSell[g.key] or g.sell
-        GPT.calc.cutGems[g.key] = {
+        local sell = EGP.db.gemSell[g.key] or g.sell
+        EGP.calc.cutGems[g.key] = {
             matCost = cost,
             profit  = sell - cost,
         }
@@ -96,13 +96,13 @@ end
 -- 20) across the remaining "auto" gems, then any leftover gold is handed
 -- out round-robin, one more stack at a time, until nothing more fits.
 local function recalcKit()
-    local db = GPT.db
+    local db = EGP.db
     local budget = tonumber(db.budget) or 0
 
     local lockedCost = 0
     local autoList = {}
 
-    for _, g in ipairs(GPT.CutGems) do
+    for _, g in ipairs(EGP.CutGems) do
         local row = db.kit[g.key]
         local price = db.gemSell[g.key] or g.sell
         if row.include then
@@ -148,7 +148,7 @@ local function recalcKit()
     end
 
     local totalValue = 0
-    for _, g in ipairs(GPT.CutGems) do
+    for _, g in ipairs(EGP.CutGems) do
         local row = db.kit[g.key]
         local price = db.gemSell[g.key] or g.sell
         local qty = 0
@@ -160,7 +160,7 @@ local function recalcKit()
             end
         end
         local value = qty * price
-        GPT.calc.kit[g.key] = {
+        EGP.calc.kit[g.key] = {
             qty = qty,
             stacks = qty / 20,
             value = value,
@@ -168,14 +168,14 @@ local function recalcKit()
         totalValue = totalValue + value
     end
 
-    GPT.calc.kitTotalValue = totalValue
-    GPT.calc.kitOverBudget = totalValue > budget
+    EGP.calc.kitTotalValue = totalValue
+    EGP.calc.kitOverBudget = totalValue > budget
 end
 
 local function recalcSmallKit()
-    local db = GPT.db
+    local db = EGP.db
     local total = 0
-    for _, s in ipairs(GPT.SmallKit) do
+    for _, s in ipairs(EGP.SmallKit) do
         local row = db.smallKit[s.key]
         local price = matPrice(s.key)
         local qty = tonumber(row.qty) or 0
@@ -186,23 +186,23 @@ local function recalcSmallKit()
         else
             value = 0
         end
-        GPT.calc.smallKit[s.key] = {
+        EGP.calc.smallKit[s.key] = {
             price = price,
             stacks = stacks,
             value = value,
         }
         total = total + value
     end
-    GPT.calc.smallKitTotalValue = total
+    EGP.calc.smallKitTotalValue = total
 end
 
-function GPT_Recalc()
-    if not GPT.db then return end
+function EGP_Recalc()
+    if not EGP.db then return end
     recalcCutGems()
     recalcKit()
     recalcSmallKit()
-    if GPT.RefreshUI then
-        GPT.RefreshUI()
+    if EGP.RefreshUI then
+        EGP.RefreshUI()
     end
 end
 
@@ -212,20 +212,20 @@ end
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, addon)
-    if addon == "GemPriceTracker" then
-        GPT_InitDB()
-        GPT_Recalc()
-        if GPT.BuildUI then
-            GPT.BuildUI()
+    if addon == "ElvinGemPrices" then
+        EGP_InitDB()
+        EGP_Recalc()
+        if EGP.BuildUI then
+            EGP.BuildUI()
         end
         self:UnregisterEvent("ADDON_LOADED")
     end
 end)
 
-SLASH_GEMPRICETRACKER1 = "/gpt"
-SLASH_GEMPRICETRACKER2 = "/gemtracker"
-SlashCmdList["GEMPRICETRACKER"] = function()
-    if GPT.ToggleFrame then
-        GPT.ToggleFrame()
+SLASH_ELVINGEMPRICES1 = "/egp"
+SLASH_ELVINGEMPRICES2 = "/elvingemprices"
+SlashCmdList["ELVINGEMPRICES"] = function()
+    if EGP.ToggleFrame then
+        EGP.ToggleFrame()
     end
 end
