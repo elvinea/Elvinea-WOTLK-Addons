@@ -1,0 +1,15 @@
+## Interface: 30300
+## Title: ElvinRotation
+## Notes: Priority helper for WotLK 3.3.5a. Shadow Priest, Frost DK, Unholy DK.
+## Author: James
+## Version: 2.9
+## SavedVariables: ElvinRotationDB
+
+Compat.lua
+Core.lua
+State.lua
+Engine.lua
+Options.lua
+Specs\PriestShadow.lua
+Specs\DeathKnightFrost.lua
+Specs\DeathKnightUnholy.lua

@@ -1,0 +1,34 @@
+ElvinRotation
+Copyright (C) 2026 James
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------
+WHY GPL v3
+--------------------------------------------------------------------
+This addon is a derivative work of Hekili (https://github.com/Hekili/hekili),
+which is licensed under GPL v3. The action priority lists and the
+flay_over_blast expression were translated from Hekili's `wrath` branch,
+and GPL v3 requires derivative works to carry the same licence.
+
+--------------------------------------------------------------------
+ACTION REQUIRED BEFORE PUBLISHING
+--------------------------------------------------------------------
+Replace everything below this line with the full text of the GNU General
+Public License version 3, available at:
+
+    https://www.gnu.org/licenses/gpl-3.0.txt
+
+A licence notice alone is not sufficient; GPL v3 requires the full text
+to be distributed with the work.
