@@ -545,7 +545,7 @@ do
 
   local function print_output(frame, ...)
     local n = 1
-    if not temp[n] then temp[n] = '|cffff7d0aElvinCDs|r:' end
+    if not temp[n] then temp[n] = '|cffff7d0aElvinCoolDowns|r:' end
     for i = 1, select('#', ...) do
       n = n + 1
       temp[n] = tostring(select(i, ...))
@@ -598,7 +598,7 @@ do
   -- Display a message to both chat frame and raid warnings
   -- frame but the player only.
   function mod.announceSelf(text)
-    local output = '|cffff7d0aElvinCDs|r: '..tostring(text)
+    local output = '|cffff7d0aElvinCoolDowns|r: '..tostring(text)
     RaidNotice_AddMessage(RaidWarningFrame, output, {r=1, g=1, b=1})
     CHAT_FRAME:AddMessage(output)
     PlaySoundFile('Sound\\Interface\\KeyRingOpen.wav')
@@ -649,37 +649,37 @@ do
   local function showTooltip(frame)
     -- Is the anchor manually set?
     if not frame.tooltip_anchor then
-      GameTooltip_SetDefaultAnchor(ElvinCDs_Tooltip, frame)
+      GameTooltip_SetDefaultAnchor(ElvinCoolDowns_Tooltip, frame)
     else
-      ElvinCDs_Tooltip:SetOwner(frame, frame.tooltip_anchor)
+      ElvinCoolDowns_Tooltip:SetOwner(frame, frame.tooltip_anchor)
     end
 
-    ElvinCDs_Tooltip:ClearLines()
+    ElvinCoolDowns_Tooltip:ClearLines()
 
     if frame.tooltip_title then
-      ElvinCDs_Tooltip:SetText(frame.tooltip_title)
+      ElvinCoolDowns_Tooltip:SetText(frame.tooltip_title)
     end
 
     if frame.tooltip_text then
       if type(frame.tooltip_text) == 'string' then
-        ElvinCDs_Tooltip:AddLine(frame.tooltip_text, color.r, color.g, color.b, true)
+        ElvinCoolDowns_Tooltip:AddLine(frame.tooltip_text, color.r, color.g, color.b, true)
       elseif type(frame.tooltip_text) == 'table' then
         for _, l in ipairs(frame.tooltip_text) do
-          ElvinCDs_Tooltip:AddLine(l, color.r, color.g, color.b, true)
+          ElvinCoolDowns_Tooltip:AddLine(l, color.r, color.g, color.b, true)
         end
       end
     end
 
     if frame.tooltip_item then
-      ElvinCDs_Tooltip:SetHyperlink(frame.tooltip_item)
+      ElvinCoolDowns_Tooltip:SetHyperlink(frame.tooltip_item)
     end
 
-    ElvinCDs_Tooltip:Show()
+    ElvinCoolDowns_Tooltip:Show()
   end
 
   -- Hides the tooltip:
   local function hideTooltip()
-    ElvinCDs_Tooltip:Hide()
+    ElvinCoolDowns_Tooltip:Hide()
   end
 
   -- Sets frame OnEnter and OnLeave scripts.

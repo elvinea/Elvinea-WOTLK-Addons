@@ -1,10 +1,10 @@
--- GearCheck :: Data.lua
+-- ElvinGearCheck :: Data.lua
 -- All the reference data: slot list, class/spec -> role, acceptable gems & enchants.
 -- Everything here is name-based, because on 3.3.5a we read gem names via GetItemGem()
 -- and enchant text via a tooltip scan, so we don't need raw item IDs to validate.
 
-GearCheck = GearCheck or {}
-local GC = GearCheck
+ElvinGearCheck = ElvinGearCheck or {}
+local GC = ElvinGearCheck
 
 -------------------------------------------------------------------------------
 -- Equipment slots we scan (skip Shirt/Tabard). ench = should carry an enchant.

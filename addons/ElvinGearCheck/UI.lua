@@ -1,8 +1,8 @@
--- GearCheck :: UI.lua
+-- ElvinGearCheck :: UI.lua
 -- Pop-up window: one line per player (collapsed), click to drop down per-slot detail.
 
-GearCheck = GearCheck or {}
-local GC = GearCheck
+ElvinGearCheck = ElvinGearCheck or {}
+local GC = ElvinGearCheck
 GC.lines = {}
 GC.expandedItem = {}   -- ["Player\0Slot"] = true
 
@@ -20,7 +20,7 @@ end
 
 function GC:BuildUI()
     if self.win then return end
-    local f = CreateFrame("Frame", "GearCheckWindow", UIParent)
+    local f = CreateFrame("Frame", "ElvinGearCheckWindow", UIParent)
     f:SetWidth(WIN_W); f:SetHeight(WIN_H)
     f:SetPoint("TOPLEFT", UIParent, "CENTER", -WIN_W/2, WIN_H/2)  -- anchored by top-left so resizing is stable
     f:SetFrameStrata("HIGH")
@@ -42,7 +42,7 @@ function GC:BuildUI()
 
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     title:SetPoint("TOP", 0, -16)
-    title:SetText("GearCheck  |cff888888v2.11|r")
+    title:SetText("ElvinGearCheck  |cff888888v3.0|r")
     f.title = title
 
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
@@ -63,7 +63,7 @@ function GC:BuildUI()
     bClear:SetScript("OnClick",  function() GC:ClearResults() end)
 
     -- scroll area
-    local sf = CreateFrame("ScrollFrame", "GearCheckScroll", f, "UIPanelScrollFrameTemplate")
+    local sf = CreateFrame("ScrollFrame", "ElvinGearCheckScroll", f, "UIPanelScrollFrameTemplate")
     sf:SetPoint("TOPLEFT", 16, -64)
     sf:SetPoint("BOTTOMRIGHT", -34, 20)
     local child = CreateFrame("Frame", nil, sf)

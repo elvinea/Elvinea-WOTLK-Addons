@@ -1,7 +1,7 @@
--- GearCheck :: Talents.lua  (auto-generated from the 'Talent Builds' tab)
+-- ElvinGearCheck :: Talents.lua  (auto-generated from the 'Talent Builds' tab)
 -- GC.TALENT_BUILD[classToken][spec] = { [talentName]=rank }  — the reference build.
-GearCheck = GearCheck or {}
-local GC = GearCheck
+ElvinGearCheck = ElvinGearCheck or {}
+local GC = ElvinGearCheck
 GC.TALENT_BUILD = {
   ["DEATHKNIGHT"] = {
     ["Blood"] = { ["Blade Barrier"]=5, ["Bladed Armor"]=5, ["Dark Conviction"]=5, ["Bloody Vengeance"]=3, ["Death Rune Mastery"]=3, ["Improved Rune Tap"]=3, ["Spell Deflection"]=3, ["Veteran of the Third War"]=3, ["Will of the Necropolis"]=3, ["Abomination's Might"]=2, ["Improved Death Strike"]=2, ["Two-Handed Weapon Specialization"]=2, ["Hysteria"]=1, ["Rune Tap"]=1, ["Scent of Blood"]=1, ["Vampiric Blood"]=1, ["Icy Talons"]=5, ["Killing Machine"]=5, ["Toughness"]=5, ["Frigid Dreadplate"]=3, ["Improved Icy Touch"]=3, ["Glacier Rot"]=2, ["Icy Reach"]=2, ["Improved Icy Talons"]=1 },

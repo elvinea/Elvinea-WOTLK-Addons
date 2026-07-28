@@ -1,7 +1,7 @@
--- GearCheck :: Items.lua  (auto-generated from the guild BiS sheet)
+-- ElvinGearCheck :: Items.lua  (auto-generated from the guild BiS sheet)
 -- GC.ITEM_BIS[profile][slot] = { [itemName]=true }  — accepted items per slot.
-GearCheck = GearCheck or {}
-local GC = GearCheck
+ElvinGearCheck = ElvinGearCheck or {}
+local GC = ElvinGearCheck
 GC.ITEM_BIS = {
   ["Agi Mail"] = {
     ["Back"] = { ["Shadowvault Slayer's Cloak"]=true },

@@ -1,12 +1,13 @@
 ## Interface: 30300
-## Title: !|cffff7d0aElvin|r|cff33ff99Cooldowns|r
-## Notes: A custom raid cooldowns tracker made for |cffFF7D0AElvinae|r from |cff996019Warmane|r-Icecrown.
+## Title: |cffff7d0aElvin|r|cff33ff99CoolDowns|r
+## Notes: A custom raid cooldowns tracker made for |cffFF7D0AElvinae|r from |cff996019Warmane|r-Icecrown.|nOriginally created by Kader (bkader); customized fork.
 ## Author: Kader (|cff808080bkader#6361|r)
-## Version: 0.4b
+## Version: 0.5
 ## DefaultState: enabled
 ## SavedVariables: Elvin_Options, Elvin_Spells, Elvin_Cooldowns
 ## X-Date: 2022-05-24 @ 09:45 PM |cff808080UTC|r
 ## X-License: MIT/X
 ## X-Email: bkader@mail.com
 ## X-Website: https://github.com/bkader/ElvinCDs
+## X-Fork: Customized by Elvinae (Elvinea-WOTLK-Addons)
 Load.xml

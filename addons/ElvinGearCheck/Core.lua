@@ -1,15 +1,15 @@
--- GearCheck :: Core.lua
+-- ElvinGearCheck :: Core.lua
 -- Scanning (gear/gems/enchants), role detection, raid inspection queue, validation.
 
-GearCheck = GearCheck or {}
-local GC = GearCheck
+ElvinGearCheck = ElvinGearCheck or {}
+local GC = ElvinGearCheck
 GC.results = {}          -- name -> scan data
 GC.expanded = {}         -- name -> bool (UI drop-down state)
 
 -------------------------------------------------------------------------------
 -- Hidden tooltip for reading enchant effect text
 -------------------------------------------------------------------------------
-local scanTip = CreateFrame("GameTooltip", "GearCheckScanTip", nil, "GameTooltipTemplate")
+local scanTip = CreateFrame("GameTooltip", "ElvinGearCheckScanTip", nil, "GameTooltipTemplate")
 scanTip:SetOwner(UIParent, "ANCHOR_NONE")
 
 -- One tooltip pass per item: returns (enchantText, emptySocketCount, isHeroic, gemNames).
@@ -23,7 +23,7 @@ local function ScanItemTooltip(unit, slotId)
     local empty, isHeroic, hasProfReq = 0, false, false
     local gemNames = {}
     for i = 2, scanTip:NumLines() do
-        local fs = _G["GearCheckScanTipTextLeft"..i]
+        local fs = _G["ElvinGearCheckScanTipTextLeft"..i]
         local txt = fs and fs:GetText()
         if txt then
             local low = txt:lower()
@@ -479,12 +479,12 @@ function GC:WhisperProblems(name, mode)
 
     if #fixes == 0 then
         local what = (mode == "all") and "gear, gems, enchants and talents" or "gems and enchants"
-        SendChatMessage("GearCheck: your " .. what .. " look good!", "WHISPER", nil, name)
+        SendChatMessage("ElvinGearCheck: your " .. what .. " look good!", "WHISPER", nil, name)
         self:Print("Whispered " .. name .. ": no issues.")
         return
     end
     for i, f in ipairs(fixes) do
-        local msg = "GearCheck: " .. f
+        local msg = "ElvinGearCheck: " .. f
         self:After(0.25 * (i - 1), function() SendChatMessage(msg, "WHISPER", nil, name) end)
     end
     self:Print("Whispered " .. name .. " their " .. #fixes .. " fix(es).")
@@ -792,7 +792,7 @@ end
 -- Utility / slash
 -------------------------------------------------------------------------------
 function GC:Print(msg)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffGearCheck|r: " .. tostring(msg))
+    DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffElvinGearCheck|r: " .. tostring(msg))
 end
 
 -- Diagnostic: print raw per-tab talent point totals (both the direct API value and
@@ -848,7 +848,7 @@ function GC:DumpItem(unit, slotId, label)
                    " gems=" .. (c or "-") .. "," .. (d or "-") .. "," .. (e or "-"))
     end
     for i = 1, scanTip:NumLines() do
-        local fs = _G["GearCheckScanTipTextLeft" .. i]
+        local fs = _G["ElvinGearCheckScanTipTextLeft" .. i]
         local txt = fs and fs:GetText()
         if txt and txt ~= "" then
             local r, g, b = fs:GetTextColor()
@@ -857,9 +857,10 @@ function GC:DumpItem(unit, slotId, label)
     end
 end
 
-SLASH_GEARCHECK1 = "/gc"
-SLASH_GEARCHECK2 = "/gearcheck"
-SlashCmdList["GEARCHECK"] = function(msg)
+SLASH_ELVINGEARCHECK1 = "/egc"
+SLASH_ELVINGEARCHECK2 = "/elvingearcheck"
+SLASH_ELVINGEARCHECK3 = "/gc"   -- kept as an alias
+SlashCmdList["ELVINGEARCHECK"] = function(msg)
     msg = (msg or ""):lower():gsub("^%s+",""):gsub("%s+$","")
     if msg == "self" or msg == "" then GC:ScanSelf()
     elseif msg == "target" or msg == "t" then GC:ScanTarget()
@@ -920,6 +921,6 @@ SlashCmdList["GEARCHECK"] = function(msg)
             GC:DumpItem("player", id, "self " .. slot)
         end
     else
-        GC:Print("commands: /gc self | target | raid | check | show | hide | talents | talents target | dump <slot> [target]")
+        GC:Print("commands: /egc self | target | raid | check | show | hide | talents | talents target | dump <slot> [target]")
     end
 end

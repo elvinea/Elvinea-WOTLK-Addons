@@ -67,7 +67,7 @@ local function fetchLogs()
 
   for k, v in ipairs(logs) do
     local btnName = frameName..'_LogBtn_'..k
-    local btn = _G[btnName] or CreateFrame('Button', btnName, scrollChild, 'ElvinCDs_LogsButton')
+    local btn = _G[btnName] or CreateFrame('Button', btnName, scrollChild, 'ElvinCoolDowns_LogsButton')
     btn:SetID(k)
     btn:Show()
 
@@ -141,7 +141,7 @@ function mod:reset()
   resetFrameStatus()
 end
 
-local fname = 'ElvinCDs_LogsFrame'
+local fname = 'ElvinCoolDowns_LogsFrame'
 local mainFrame = CreateFrame('Frame', fname)
 mainFrame:SetScript('OnUpdate', function(self, elapsed)
   if utils.update(self, fname, 0.05, elapsed) then

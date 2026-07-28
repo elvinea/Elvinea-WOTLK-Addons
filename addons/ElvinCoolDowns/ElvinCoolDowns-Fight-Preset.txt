@@ -1,0 +1,60 @@
+==============================================================
+ ElvinCoolDowns  -  Raid Fight Tracking Preset
+==============================================================
+
+HOW TO IMPORT
+  1. In game, type:  /ecd io
+  2. (Optional backup) click "Export" first and copy that text
+     somewhere safe - Import will overwrite your tracked list.
+  3. Select the whole ElvinCoolDowns:v1:... line below, copy it,
+     paste it into the box, and click "Import".
+  4. The tracked spells update immediately and their bars show.
+
+Import REPLACES your custom tracked-spell settings only. It does
+not touch your other options (layout, colours, message, etc.).
+
+Every spell in this preset is set to both TRACK (log/monitor) and
+SHOW (display a bar). In this addon those are separate: a spell can
+be tracked without being shown. If you want any of these logged but
+hidden, un-tick "Show" for it in the options Spells tab afterwards.
+
+--------------------------------------------------------------
+ IMPORT STRING  (copy the whole line)
+--------------------------------------------------------------
+ElvinCoolDowns:v1:{[64843]={["cooldown"]=480,["track"]=true,["hidden"]=false,["blind"]=true},[64901]={["cooldown"]=360,["track"]=true,["hidden"]=false,["shout"]=true,["blind"]=true},[47788]={["cooldown"]=180,["track"]=true,["hidden"]=false,["shout"]=true},[33206]={["cooldown"]=180,["track"]=true,["hidden"]=false,["shout"]=true},[10060]={["cooldown"]=120,["track"]=true,["hidden"]=false,["whisper"]=true},[6346]={["cooldown"]=180,["track"]=true,["hidden"]=false,["shout"]=true},[10278]={["cooldown"]=300,["track"]=true,["hidden"]=false,["shout"]=true},[6940]={["cooldown"]=120,["track"]=true,["hidden"]=false,["shout"]=true},[1038]={["cooldown"]=120,["track"]=true,["hidden"]=false,["shout"]=true},[1044]={["cooldown"]=25,["track"]=true,["hidden"]=false,["shout"]=true},[64205]={["cooldown"]=120,["track"]=true,["hidden"]=false,["shout"]=true,["blind"]=true},[31821]={["cooldown"]=120,["track"]=true,["hidden"]=false,["shout"]=true,["blind"]=true},[48788]={["cooldown"]=1200,["track"]=true,["hidden"]=false,["shout"]=true},[642]={["cooldown"]=300,["track"]=true,["hidden"]=false,["blind"]=true},[48477]={["cooldown"]=600,["track"]=true,["hidden"]=false,["shout"]=true},[29166]={["cooldown"]=180,["track"]=true,["hidden"]=false,["whisper"]=true},[48447]={["cooldown"]=480,["track"]=true,["hidden"]=false,["blind"]=true},[22812]={["cooldown"]=60,["track"]=true,["hidden"]=false,["blind"]=true},[32182]={["cooldown"]=300,["track"]=true,["hidden"]=false,["shout"]=true,["blind"]=true},[2825]={["cooldown"]=300,["track"]=true,["hidden"]=false,["shout"]=true,["blind"]=true},[16190]={["cooldown"]=300,["track"]=true,["hidden"]=false,["shout"]=true,["blind"]=true},[20608]={["cooldown"]=1800,["track"]=true,["hidden"]=false,["blind"]=true},[47883]={["cooldown"]=900,["track"]=true,["hidden"]=false,["whisper"]=true},[34477]={["cooldown"]=30,["track"]=true,["hidden"]=false,["whisper"]=true},[57934]={["cooldown"]=30,["track"]=true,["hidden"]=false,["whisper"]=true},[50720]={["cooldown"]=0,["track"]=true,["hidden"]=false,["shout"]=true,["whisper"]=true},[871]={["cooldown"]=300,["track"]=true,["hidden"]=false},[20230]={["cooldown"]=300,["track"]=true,["hidden"]=false,["blind"]=true},[51052]={["cooldown"]=120,["track"]=true,["hidden"]=false,["talent"]=true,["blind"]=true},[49016]={["cooldown"]=180,["track"]=true,["hidden"]=false,["talent"]=true,["whisper"]=true},[55233]={["cooldown"]=60,["track"]=true,["hidden"]=false,["blind"]=true},[54646]={["cooldown"]=0,["track"]=true,["hidden"]=false,["talent"]=true,["whisper"]=true},[57426]={["cooldown"]=0,["track"]=true,["hidden"]=false,["shout"]=true},[58465]={["cooldown"]=0,["track"]=true,["hidden"]=false,["shout"]=true},[58659]={["cooldown"]=0,["track"]=true,["hidden"]=false,["shout"]=true},[58887]={["cooldown"]=300,["track"]=true,["hidden"]=false,["shout"]=true,["blind"]=true}}
+
+--------------------------------------------------------------
+ WHAT THIS TRACKS
+--------------------------------------------------------------
+Raid / encounter cooldowns people call for during fights:
+
+  Priest    Divine Hymn, Hymn of Hope, Guardian Spirit,
+            Pain Suppression, Power Infusion, Fear Ward
+  Paladin   Hand of Protection / Sacrifice / Salvation / Freedom,
+            Divine Sacrifice, Aura Mastery, Lay on Hands, Divine Shield
+  Druid     Rebirth, Innervate, Tranquility, Barkskin
+  Shaman    Heroism / Bloodlust, Mana Tide Totem, Reincarnation
+  Warlock   Soulstone Resurrection
+  Hunter    Misdirection
+  Rogue     Tricks of the Trade
+  Warrior   Vigilance, Shield Wall, Retaliation
+  DK        Anti-Magic Zone, Hysteria, Vampiric Blood
+  Mage      Focus Magic
+
+Specials (raid utility / "fish etc"):
+  Fish Feast, Gigantic Feast, Ritual of Refreshment (mage table),
+  Ritual of Souls (soulwell)
+
+The feast/table entries have no real cooldown - they show a bar per
+player who can/does drop one, so you can see who has a feast up.
+
+--------------------------------------------------------------
+ TIPS
+--------------------------------------------------------------
+- Want ONLY these and none of the addon's built-in defaults?
+  Turn off the default spell list in the options (Spells tab) so the
+  tracked set is exactly this preset.
+- To share your own setup: /ecd io -> Export -> copy the string.
+- To tweak: import this, then use the Spells tab to add/remove
+  spells or toggle Show/Track per spell; changes save to your setup.
+==============================================================

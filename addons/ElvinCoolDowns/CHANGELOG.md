@@ -1,8 +1,28 @@
-# Changelog — !ElvinCDs
+# Changelog — ElvinCoolDowns
 
-All notable changes to this fork of **!ElvinCDs** are documented here.
+**ElvinCoolDowns** is a customized fork of the **!ElvinCDs** raid cooldown
+tracker originally written by **Kader Bouyakoub** (bkader,
+<https://github.com/bkader/ElvinCDs>), released under the MIT license and made
+for Elvinae of Warmane-Icecrown. All original authorship and the MIT license
+are retained; the entries below record the changes made on top of Kader's work.
 
 This project loosely follows [Keep a Changelog](https://keepachangelog.com/).
+
+## [0.5] — Renamed to ElvinCoolDowns
+
+### Changed
+
+- **Renamed the addon from `!ElvinCDs` to `ElvinCoolDowns`.** The folder, the
+  `.toc`, the global table, and all internal frame names now use the
+  `ElvinCoolDowns` name. Kader's authorship, the original repository link, and
+  the MIT license are unchanged.
+- Saved-variable names (`Elvin_Options`, `Elvin_Spells`, `Elvin_Cooldowns`) were
+  intentionally left as-is so settings logic is unaffected. Note: because WoW
+  keys an addon's saved-variables file to its folder name, migrating existing
+  settings requires renaming the saved-variables file from `!ElvinCDs.lua` to
+  `ElvinCoolDowns.lua` (see the fork notes / README).
+
+## [Unreleased] — Tower layout, class colours & customisation
 
 ## [Unreleased] — Tower layout, class colours & customisation
 
@@ -35,6 +55,13 @@ Base version: `0.4b`.
   the right-click menu label and the whisper that gets sent, so they always
   match. Use `{spell}` as a placeholder for the spell name
   (default: `Please use {spell} on me`).
+- **Import / export of tracked-spell settings.** `/ecd io` opens a window to
+  export your tracked-spell setup as a shareable string, or paste one in and
+  import it. `/ecd export` and `/ecd import` open it directly. Import replaces
+  the custom tracked-spell settings only (other options are untouched); the
+  import chunk is sandboxed so a pasted string can only build a plain table.
+  A ready-made raid-fight preset (key cooldowns plus feast/utility "specials")
+  is provided as a separate file.
 
 ### Changed
 

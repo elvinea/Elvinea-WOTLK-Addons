@@ -2,7 +2,7 @@ local addonName, addon = ...
 local utils = addon.utils
 local L = addon.L
 local classSpells = addon.spells
-_G.ElvinCDs = addon
+_G.ElvinCoolDowns = addon
 
 -- SavedVariables:
 Elvin_Options = {}
@@ -12,7 +12,7 @@ Elvin_Cooldowns = {}
 local unitName, unitRank
 
 -- AddOn's Event Frame:
-local fname = 'ElvinCDs_EventFrame'
+local fname = 'ElvinCoolDowns_EventFrame'
 local mainFrame = CreateFrame('Frame', fname)
 local updateInterval = 0.5
 mainFrame:RegisterEvent('ADDON_LOADED')
@@ -138,7 +138,7 @@ local function removePlayerCooldown(name)
   if cooldowns then
     for k, v in pairs(cooldowns) do
       v.players[name] = nil
-      utils.hide(_G['ElvinCDs_'..tostring(k)..'_'..name])
+      utils.hide(_G['ElvinCoolDowns_'..tostring(k)..'_'..name])
     end
   end
 end
@@ -222,7 +222,7 @@ local function createWindow(spellId, wName)
 
   local spellName, _, spellIcon = GetSpellInfo(spellId)
 
-  wName = wName or 'ElvinCDs_'..tostring(spellId)
+  wName = wName or 'ElvinCoolDowns_'..tostring(spellId)
   local window = utils.deepCopy(spell)
   window.name = wName
   window.spellId = spellId
@@ -230,7 +230,7 @@ local function createWindow(spellId, wName)
   -- Create window frame:
   local wFrame = window.frame
   if not wFrame then
-    wFrame = _G[wName] or CreateFrame('Frame', wName, UIParent, 'ElvinCDs_WindowTemplate')
+    wFrame = _G[wName] or CreateFrame('Frame', wName, UIParent, 'ElvinCoolDowns_WindowTemplate')
     window.frame = wFrame
   end
 
@@ -411,8 +411,8 @@ local function loadCooldowns()
   end
 
   for k, v in pairs(cooldowns) do
-    local wName = 'ElvinCDs_'..tostring(k)
-    local window = windows[wName] or createWindow(k, 'ElvinCDs_'..tostring(k))
+    local wName = 'ElvinCoolDowns_'..tostring(k)
+    local window = windows[wName] or createWindow(k, 'ElvinCoolDowns_'..tostring(k))
     if window then
       windows[wName] = window
       utils.showHide(window.frame, (not window.hidden and #window.bars > 0))
@@ -446,7 +446,7 @@ local function fetchCooldowns()
         for k, b in ipairs(w.bars) do
           local bar = _G[b.name]
           if not bar then
-            bar = CreateFrame('StatusBar', b.name, window, 'ElvinCDs_BarTemplate')
+            bar = CreateFrame('StatusBar', b.name, window, 'ElvinCoolDowns_BarTemplate')
           end
           bar:SetID(k)
           utils.showHide(bar, not b.hidden)
@@ -545,7 +545,7 @@ function onUpdateBar(spellId, player, elapsed)
   if unitId == 'none' then return end
 
   -- Make sure the bar exists!
-  local barName = 'ElvinCDs_'..tostring(spellId)..'_'..player
+  local barName = 'ElvinCoolDowns_'..tostring(spellId)..'_'..player
   local bar = _G[barName]
   if not bar then return end
 
@@ -611,7 +611,7 @@ do
 
     -- Create the menu frame:
     if not menuFrame then
-      menuFrame = CreateFrame('Frame', 'ElvinCDs_CooldownMenu', UIParent, 'UIDropDownMenuTemplate')
+      menuFrame = CreateFrame('Frame', 'ElvinCoolDowns_CooldownMenu', UIParent, 'UIDropDownMenuTemplate')
     end
 
     -- Holds all menu elements:
@@ -940,7 +940,7 @@ do
     if event == 'CHAT_MSG_ADDON' then
       local prefix, msg, channel, sender = ...
       -- Ignore if wrong prefix, no message or sender is me!
-      if prefix == 'ElvinCDs' and msg and sender ~= unitName then
+      if prefix == 'ElvinCoolDowns' and msg and sender ~= unitName then
         local handler
         if channel ~= 'WHISPER' and channel ~= 'GUILD' then
           handler = syncHandlers[prefix]
@@ -1003,7 +1003,7 @@ end
 
 function addon:sync(msg, channel, target)
   if options.sync then
-    utils.sync('ElvinCDs', msg, channel, target)
+    utils.sync('ElvinCoolDowns', msg, channel, target)
   end
 end
 
@@ -1054,7 +1054,93 @@ do
     end
   end
 
-  syncHandlers['ElvinCDs'] = syncHandler
+  syncHandlers['ElvinCoolDowns'] = syncHandler
+end
+
+
+
+--------------------------------------------------------------------------------
+--> Import / Export of tracked-spell settings:
+do
+  -- Turn a Lua value into a compact string we can round-trip:
+  local function serialize(v)
+    local t = type(v)
+    if t == 'table' then
+      local parts = {}
+      for k, val in pairs(v) do
+        local key
+        if type(k) == 'number' then
+          key = '['..k..']'
+        else
+          key = '['..string.format('%q', tostring(k))..']'
+        end
+        parts[#parts+1] = key..'='..serialize(val)
+      end
+      return '{'..table.concat(parts, ',')..'}'
+    elseif t == 'string' then
+      return string.format('%q', v)
+    elseif t == 'number' or t == 'boolean' then
+      return tostring(v)
+    end
+    return 'nil'
+  end
+
+  -- Parse an import string back into a { [spellId] = {settings} } table.
+  -- The chunk is sandboxed (no access to globals) so a pasted string can
+  -- only ever build a plain table.
+  local function deserialize(text)
+    if not text then return nil end
+    -- Pull out the {...} table literal, ignoring any header prefix
+    -- (e.g. "ElvinCoolDowns:v1:" or an older "ElvinCDs:v1:"):
+    local body = text:match('%b{}')
+    if not body then return nil end
+    local f = loadstring('return '..body)
+    if not f then return nil end
+    setfenv(f, {})
+    local ok, result = pcall(f)
+    if not ok or type(result) ~= 'table' then return nil end
+    local clean = {}
+    for k, v in pairs(result) do
+      local id = tonumber(k)
+      if id and type(v) == 'table' then clean[id] = v end
+    end
+    return clean
+  end
+
+  local function ioEdit() return _G['ElvinCoolDowns_IOEdit'] end
+
+  function addon:ioToggle()
+    local f = _G['ElvinCoolDowns_IO']
+    if not f then return end
+    if f:IsShown() then f:Hide() else f:Show() end
+  end
+
+  function addon:ioExport()
+    local eb = ioEdit()
+    if not eb then return end
+    eb:SetText('ElvinCoolDowns:v1:'..serialize(Elvin_Spells))
+    eb:HighlightText()
+    eb:SetFocus()
+    utils.print('Settings exported below - press Ctrl+C to copy.')
+  end
+
+  function addon:ioImport()
+    local eb = ioEdit()
+    if not eb then return end
+    local t = deserialize(eb:GetText())
+    if not t then
+      utils.print('Import failed: the text is not valid ElvinCoolDowns data.')
+      return
+    end
+    -- Replace tracked-spell settings, keeping the saved table's identity:
+    for k in pairs(Elvin_Spells) do Elvin_Spells[k] = nil end
+    local n = 0
+    for k, v in pairs(t) do Elvin_Spells[k] = v; n = n + 1 end
+    utils.triggerEvent('UpdateBars')
+    utils.print('Imported '..n..' spell setting(s).')
+    local f = _G['ElvinCoolDowns_IO']
+    if f then f:Hide() end
+  end
 end
 
 
@@ -1106,6 +1192,14 @@ do
       options.sync = not options.sync
       local status = options.sync and '|cff00ff00ON|r' or '|cffff0000OFF|r'
       utils.print(L['AddOn Synchronization'], status)
+    elseif command == 'io' then
+      addon:ioToggle()
+    elseif command == 'export' then
+      local f = _G['ElvinCoolDowns_IO']; if f then f:Show() end
+      addon:ioExport()
+    elseif command == 'import' then
+      local f = _G['ElvinCoolDowns_IO']; if f then f:Show() end
+      utils.print('Paste your preset into the box, then click Import.')
     elseif command == 'reset' then
       local cmd, other = match(rest, "^(%S*)%s*(.-)$")
       local passed, msg = false
@@ -1137,6 +1231,7 @@ do
       print(L:F(helpString, 'reset all', L['Resets all spells cooldowns']))
       print(L:F(helpString, 'reset logs', L['Resets all spells logs']))
       print(L:F(helpString, 'sync', L['Enables/Disabled addon synchronization']))
+      print(L:F(helpString, 'io', 'Open the import/export window for tracked spells'))
     elseif command == 'config' or command == 'options' or command == '' then
       addon.Config:toggle()
     end

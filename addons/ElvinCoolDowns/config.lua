@@ -289,7 +289,7 @@ do
 
       for k, v in ipairs(spells) do
         local btnName = frameName..'_SpellBtn_'..k
-        local btn = _G[btnName] or CreateFrame('Button', btnName, scrollChild, 'ElvinCDs_SpellButton')
+        local btn = _G[btnName] or CreateFrame('Button', btnName, scrollChild, 'ElvinCoolDowns_SpellButton')
         btn:SetID(k)
         btn:Show()
 
@@ -307,14 +307,14 @@ do
         name:SetText(v.spellName)
         name:SetScript('OnEnter', function(self)
           local spellLink = GetSpellLink(v.spellId)
-          GameTooltip_SetDefaultAnchor(ElvinCDs_Tooltip, btn)
-          ElvinCDs_Tooltip:SetHyperlink(spellLink)
-          ElvinCDs_Tooltip:Show()
+          GameTooltip_SetDefaultAnchor(ElvinCoolDowns_Tooltip, btn)
+          ElvinCoolDowns_Tooltip:SetHyperlink(spellLink)
+          ElvinCoolDowns_Tooltip:Show()
           btn:LockHighlight()
           btn.hovered = true
         end)
         name:SetScript('OnLeave', function(self)
-          ElvinCDs_Tooltip:Hide()
+          ElvinCoolDowns_Tooltip:Hide()
           btn:UnlockHighlight()
           btn.hovered = false
         end)
@@ -500,7 +500,7 @@ do
     local function openMenu(btn, spellId)
       if not btn or not spellId then return end
       if not menuFrame then
-        menuFrame = CreateFrame('Frame', 'ElvinCDs_SpellMenu', UIParent, 'UIDropDownMenuTemplate')
+        menuFrame = CreateFrame('Frame', 'ElvinCoolDowns_SpellMenu', UIParent, 'UIDropDownMenuTemplate')
       end
 
       local menuItems = {

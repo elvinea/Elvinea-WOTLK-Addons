@@ -14,5 +14,5 @@
 	<Include file="config.xml" />
 	<Include file="logs.xml" />
 	<!-- AddOn Tooltip -->
-	<GameTooltip name="ElvinCDs_Tooltip" inherits="GameTooltipTemplate" parent="UIParent" hidden="true" />
+	<GameTooltip name="ElvinCoolDowns_Tooltip" inherits="GameTooltipTemplate" parent="UIParent" hidden="true" />
 </Ui>

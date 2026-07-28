@@ -1,4 +1,4 @@
-# GearCheck — Changelog
+# ElvinGearCheck — Changelog
 
 A raid gear/gem/enchant/talent auditor for **WotLK 3.3.5a (Warmane)**.
 
@@ -12,12 +12,21 @@ Reference data (BiS items, acceptable gems/enchants, tier versions, talent build
 is generated from the guild spreadsheet into `Items.lua` and `Talents.lua`.
 
 ## Commands
-`/gc self` · `/gc target` · `/gc raid` · `/gc check` · `/gc show` · `/gc hide` ·
-`/gc clear` (window button) · `/gc talents` (grade + spec debug) ·
-`/gc dump <slot> [target]` (print an item's raw tooltip lines/colours) ·
-right-click a player row to cycle their role.
+`/egc self` · `/egc target` · `/egc raid` · `/egc check` · `/egc show` · `/egc hide` ·
+`/egc talents` (grade + spec debug) ·
+`/egc dump <slot> [target]` (print an item's raw tooltip lines/colours) ·
+Clear via the window button · right-click a player row to cycle their role.
+Also responds to `/elvingearcheck` and the legacy `/gc`.
 
 ---
+
+## v3.0 — Renamed to ElvinGearCheck
+- Addon renamed **GearCheck → ElvinGearCheck**: folder, `.toc`, saved variables
+  (`ElvinGearCheckDB`), all frame names and the global table. Install as
+  `Interface\AddOns\ElvinGearCheck\`.
+- Slash commands are now **`/egc`** and `/elvingearcheck`; `/gc` still works as an alias.
+- **Note:** this is effectively a fresh install — delete the old `GearCheck` folder,
+  and per-character saved settings start clean (the old `GearCheckDB` is not migrated).
 
 ## v2.11
 - Two whisper options per player: **"whisper gems & enchants"** (enchant/gem/socket
