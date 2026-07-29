@@ -38,10 +38,32 @@ local function emptyAura()
     return { up = false, down = true, remains = 0, stack = 0, stacks = 0, expires = 0 }
 end
 
-local function readAura(unit, def, isDebuff, mineOnly)
+local function readAura(unit, def, isDebuff, mineOnly, key)
     local count, expires, duration
     if isDebuff then
         count, expires, duration = C.FindDebuff(unit, def.name, def.id, mineOnly)
+
+        -- FALLBACK: believe the combat log.
+        --
+        -- If UnitDebuff cannot see a debuff we KNOW we applied - wrong
+        -- rank, a caster the client will not name, a server quirk -
+        -- then trusting the scan means the addon decides the disease is
+        -- missing and tells you to reapply it forever. The combat log
+        -- already tells us we landed it and when, so use that.
+        if not count and key and unit == "target" and UnitGUID then
+            local guid = UnitGUID("target")
+            local seen = guid and ER.dotTargets and ER.dotTargets[key]
+                         and ER.dotTargets[key][guid]
+            if seen and seen > state.now then
+                return {
+                    up = true, down = false,
+                    remains = seen - state.now,
+                    stack = 1, stacks = 1, expires = seen,
+                    duration = def.duration or 15,
+                    inferred = true,
+                }
+            end
+        end
     else
         count, expires, duration = C.FindBuff(unit, def.name, def.id)
     end
@@ -135,6 +157,23 @@ function ER:UpdateState()
     state.inCombat = UnitAffectingCombat("player")
     state.moving   = updateMoving()
 
+    -- Generic power. A spec declares powerType (0 mana, 1 rage,
+    -- 3 energy, 6 runic power) and gets it as state.power, plus a
+    -- readable alias. Saves every new spec inventing its own.
+    if spec.powerType then
+        state.power    = UnitPower("player", spec.powerType) or 0
+        state.powerMax = UnitPowerMax("player", spec.powerType) or 100
+        state.powerPct = state.powerMax > 0
+                         and (state.power / state.powerMax * 100) or 0
+        if spec.powerType == 3 then state.energy = state.power end
+        if spec.powerType == 1 then state.rage   = state.power end
+    end
+
+    -- Combo points live on the TARGET in 3.3.5, not on the player.
+    if spec.usesComboPoints then
+        state.comboPoints = (GetComboPoints and GetComboPoints("player", "target")) or 0
+    end
+
     -- resources
     state.mana    = UnitMana("player")
     state.manaMax = UnitManaMax("player")
@@ -193,7 +232,7 @@ function ER:UpdateState()
     -- auras
     for key, def in pairs(spec.auras) do
         if def.type == "debuff" then
-            state.debuff[key] = readAura("target", def, true, def.mine ~= false)
+            state.debuff[key] = readAura("target", def, true, def.mine ~= false, key)
         else
             state.buff[key] = readAura("player", def, false)
         end

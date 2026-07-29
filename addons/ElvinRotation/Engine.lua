@@ -31,7 +31,30 @@ local function isUsable(ab, state, virtual)
     end
     if ab.rp and (state.runicPower or 0) < ab.rp then return false end
 
+    -- generic power cost (energy, rage)
+    if ab.power and (state.power or 0) < ab.power then return false end
+
+    -- combo point requirement
+    if ab.minCombo and (state.comboPoints or 0) < ab.minCombo then return false end
+    if ab.needsCombo and (state.comboPoints or 0) < 1 then return false end
+
     if ab.harmful and not state.targetExists then return false end
+
+    -- IN-FLIGHT AURA SUPPRESSION.
+    --
+    -- An ability that applies a DoT was just cast, but the debuff has
+    -- not registered yet - server round trip, then the combat log,
+    -- then the next aura scan. Without this the priority sees "no
+    -- disease" and recommends the same disease again, which is why
+    -- Icy Touch and Plague Strike doubled up on the pull.
+    if ab.applies and state.sinceCast then
+        local since = state.sinceCast[ab.key] or 9999
+        if since < (ab.applyGrace or 1.5) then
+            local tbl = (ab.appliesTo == "buff") and state.buff or state.debuff
+            local a = tbl and tbl[ab.applies]
+            if not (a and a.up) then return false end
+        end
+    end
 
     -- major cooldown gating
     if ab.majorCD then
@@ -81,6 +104,28 @@ local function evaluate(list, spec, state, depth, virtual)
                 if entry.casts then
                     local done = (state.castCount and state.castCount[entry.key]) or 0
                     if done >= entry.casts then passed = false end
+
+                    -- An opener step is also satisfied if the thing it
+                    -- exists to put up is ALREADY up with plenty of
+                    -- time left, so a fixed sequence does not reapply a
+                    -- disease sitting at thirteen seconds.
+                    --
+                    -- OPT-IN, not automatic. Blood Strike applies
+                    -- Desolation as a SIDE EFFECT - it is cast for the
+                    -- damage and the rune - so skipping it whenever
+                    -- Desolation happened to be up gutted the Unholy
+                    -- opener, which leads with it. Only abilities whose
+                    -- whole purpose in the opener is to apply the aura
+                    -- set openerSkipIfUp.
+                    if passed and ab.openerSkipIfUp and ab.applies then
+                        local tbl = (ab.appliesTo == "buff")
+                                    and state.buff or state.debuff
+                        local a = tbl and tbl[ab.applies]
+                        local keep = (ab.appliesFor or 15) * 0.5
+                        if a and a.up and a.remains > keep then
+                            passed = false
+                        end
+                    end
                 end
                 if entry.when then
                     local ok, result = pcall(entry.when, state)
@@ -139,6 +184,18 @@ local function cloneState(s)
     end
     v.dot = v.debuff
     v.talent, v.glyph, v.setBonus = s.talent, s.glyph, s.setBonus
+
+    -- CAST COUNTS AND CAST TIMES MUST BE CARRIED FORWARD.
+    --
+    -- These were left out, so a projected step saw castCount as nil and
+    -- read every opener entry as "never cast". The projection therefore
+    -- replayed the opener from step one, which is why the same ability
+    -- turned up twice in the queue while its disease was plainly up.
+    v.castCount = {}
+    for k, n in pairs(s.castCount or {}) do v.castCount[k] = n end
+
+    v.sinceCast = {}
+    for k, t in pairs(s.sinceCast or {}) do v.sinceCast[k] = t end
 
     if s.runes then
         v.runes = {}
@@ -231,6 +288,22 @@ local function advance(v, ab, spec)
     end
 
     if ab.rp then v.runicPower = math.max(0, (v.runicPower or 0) - ab.rp) end
+
+    if ab.power then
+        v.power = math.max(0, (v.power or 0) - ab.power)
+        if v.energy then v.energy = v.power end
+        if v.rage   then v.rage   = v.power end
+    end
+    if ab.generatesPower then
+        v.power = math.min(v.powerMax or 100, (v.power or 0) + ab.generatesPower)
+    end
+
+    -- combo points: finishers clear, builders add
+    if ab.spendsCombo then
+        v.comboPoints = 0
+    elseif ab.buildsCombo then
+        v.comboPoints = math.min(5, (v.comboPoints or 0) + ab.buildsCombo)
+    end
     if ab.generatesRP then
         v.runicPower = math.min(v.runicPowerMax or 130,
                                 (v.runicPower or 0) + ab.generatesRP)
@@ -239,7 +312,17 @@ local function advance(v, ab, spec)
     v.now = (v.now or 0) + dt
     v.gcd = 0
 
+    -- record the simulated cast so later steps see it
     v.lastCast = ab.key
+    v.castCount = v.castCount or {}
+    v.castCount[ab.key] = (v.castCount[ab.key] or 0) + 1
+
+    v.sinceCast = v.sinceCast or {}
+    for k, t in pairs(v.sinceCast) do v.sinceCast[k] = t + dt end
+    v.sinceCast[ab.key] = 0
+
+    v.combatTime = (v.combatTime or 0) + dt
+
     if spec.UpdateExtra then spec.UpdateExtra(v) end
     return dt
 end

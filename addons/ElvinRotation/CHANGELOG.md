@@ -8,6 +8,156 @@ test. That pattern is worth preserving in the record.
 
 ---
 
+## 5.0
+
+- Added the last four specs: **Feral Druid (Cat)**, **Combat Rogue**,
+  **Subtlety Rogue**, **Elemental Shaman**.
+- **All 23 damage specs are now built.**
+- Three of the four have **no source APL** and are reconstructions rather than
+  translations. Feral has a source but omits the damage-per-energy model that
+  makes the spec work. All four are marked with reduced confidence in
+  SPECS.md, and their debatable choices are exposed as settings rather than
+  decided silently.
+- Added a Confidence column to SPECS.md covering all 23.
+
+## 4.5
+
+- Added **Demonology Warlock** — Decimation and Molten Core reactions around
+  a Metamorphosis burst window.
+- Added **Beast Mastery Hunter** — the shortest list in the addon; most of
+  the damage is the pet, which is not managed.
+- Added **Fury Warrior** — Bloodsurge-gated Slam, rage-reserved Heroic Strike.
+- Nineteen of twenty-three built. **Every spec with a translatable source is
+  now done except Feral Cat.**
+- Both Warrior specs share the same known weakness: Heroic Strike and Cleave
+  are off-GCD queued abilities and the addon has no concept of off-GCD, so
+  they are recommended as though they cost a global.
+
+## 4.4
+
+- Added **Destruction Warlock** — Immolate upkeep feeding Conflagrate and
+  Chaos Bolt, with fight-length-based curse choice.
+- Added **Frost Mage** — Fingers of Frost and Brain Freeze reactions.
+- Added **Marksmanship Hunter** — Chimera Shot refreshing Serpent Sting, with
+  optional Aspect of the Viper mana management.
+- Added **Blood Death Knight (DPS)** — everything held for Dancing Rune
+  Weapon, including runic power since DRW itself costs 60.
+- Sixteen of twenty-three specs built. Death Knight and Mage now have all
+  three trees; tests assert no two specs of a class claim the same tab.
+
+## 4.3
+
+- Added **Survival Hunter** — Explosive Shot maintenance.
+- Added **Enhancement Shaman** — Maelstrom Weapon stacking.
+- Added **Fire Mage** — Hot Streak reaction, second spec for the Mage class.
+- **All ten classes now have at least one damage spec.** Twelve of twenty-one.
+- Added tests for full class coverage and for two specs of one class claiming
+  different talent tabs.
+
+## 4.2
+
+- Added **Balance Druid** — Eclipse fishing and spamming, with internal
+  cooldown tracking for both Eclipse states.
+- Added **Arms Warrior** — first rage spec.
+- Every class in the game now has at least one damage spec built.
+- Stance dancing is deliberately omitted from Arms; see SPECS.md.
+
+## 4.1
+
+- Added **Affliction Warlock** — DoT maintenance built around the Haunt
+  window, with a Drain Soul execute below 26% health.
+- Added **Arcane Mage** — Arcane Blast stacking with two configurable mana
+  lines.
+- Both dropped in without engine changes.
+- Strengthened the structural tests: they now check that no two specs of the
+  same class claim the same talent tab, that every ability key matches its
+  table key, and that an ungated list entry has a real cooldown or cost
+  rather than matching a hardcoded list of names.
+
+## 4.0
+
+- Added **Assassination Rogue** — first combo-point spec.
+- Added **Retribution Paladin** — first cooldown-queue spec.
+- **Generalised resources.** A spec declares `powerType` (mana, rage, energy,
+  runic power) and optionally `usesComboPoints`, and the engine enforces the
+  costs. Neither new spec needed engine changes beyond this.
+- `/er state` reports combo points and current power.
+- Marked Shadow Priest, Frost DK and Unholy DK as tested in `SPECS.md`.
+
+## 3.6
+
+- **Fixed a 3.5 regression that broke the Unholy opener.** The "skip an opener
+  step if its aura is already up" rule applied to any ability with an
+  `applies` field. Blood Strike applies Desolation as a side effect — it is
+  cast for the damage and the rune — so all four of its opener steps were
+  skipped whenever Desolation happened to be up, and the Unholy opener leads
+  with it. The rule is now opt-in and set only on the diseases.
+- Added a test asserting the Unholy opener matches the played sequence step
+  for step.
+
+## 3.5
+
+- **Opener steps now skip auras that are already up.** The opener is a fixed
+  sequence and was reapplying diseases sitting at thirteen seconds, which is
+  what made the rotation look stuck on Icy Touch and Plague Strike. A step is
+  treated as satisfied if the thing it exists to apply is up with more than
+  half its duration left; a dot that is genuinely running low is still
+  refreshed.
+- `/er state` reports combat time and whether the opener is active, which is
+  what identified this.
+
+## 3.4
+
+- **Fixed abilities appearing twice in the projected queue.** The forward
+  projection did not carry cast counts into its simulated state, so every
+  opener entry read as "never cast" and the opener replayed from step one
+  inside the queue. Plague Strike could show at positions 2 and 5 with its
+  disease plainly up. Cast counts, cast times and combat time now all carry
+  forward, so the projection can hand over from opener to normal priority
+  the way the live rotation does.
+
+## 3.3
+
+- **Combat log fallback for debuffs.** If `UnitDebuff` cannot see a disease we
+  know we applied and that has not expired, it is counted as up. Prevents an
+  aura-scan failure from turning into endless reapplication. `/er state` marks
+  which source each dot came from.
+
+## 3.2
+
+- **Fixed dots being cast twice on the pull.** After casting a disease there is
+  a gap — server round trip, combat log, next aura scan — before the debuff
+  registers. The priority saw "no disease" and recommended the same one again.
+  An ability that applies an aura is now suppressed for a short grace period
+  after being cast, until the aura actually appears. Applies to every spec.
+- **Howling Blast is now gated on a Rime proc** in AoE as well as single
+  target. Off-proc it costs a frost rune that Obliterate wants. Toggleable.
+
+## 3.1
+
+- **Relaxed the "is this debuff mine" check.** It required `unitCaster` to be
+  `"player"`, but 3.3.5 frequently reports nil for units outside your group,
+  so a plainly ticking disease read as absent and the addon kept saying to
+  reapply it. Now only rejects when the client names a different caster.
+- Added `/er dots` — dumps every debuff on the target with ID, caster and
+  timer, alongside what the addon is looking for and whether it found it.
+
+## 3.0
+
+- **Frost: diseases were falling off.** The list used Pestilence for upkeep,
+  which only refreshes with **Glyph of Disease**; without it Pestilence merely
+  spreads. Diseases expired, Icy Touch and Plague Strike then needed frost and
+  unholy runes that Obliterate had already spent, and the priority fell
+  through to Blood Strike — which looked like Blood Strike was ranked too
+  high. It was not; the spec was rune starved. Glyph is now detected.
+- Diseases now refresh **before** they drop (default 3s), not after, so the
+  runes are still available.
+- **Keybinds: macros disambiguated by icon.** A macro naming several spells
+  matched all of them, so Icy Touch and Plague Strike both resolved to the
+  same slot. A macro whose texture matches the spell now outranks one that
+  merely mentions it.
+- `/er state` reports rune state, runic power and glyph detection.
+
 ## 2.9
 
 - **Bone Shield raised** above disease upkeep in the Unholy priority. It costs

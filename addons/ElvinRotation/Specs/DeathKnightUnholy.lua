@@ -53,12 +53,12 @@ spec.abilities = {
     icy_touch = {
         key = "icy_touch", id = 49909, harmful = true, castableMoving = true,
         runes = { frost = 1 }, generatesRP = 10,
-        applies = "frost_fever", appliesFor = 15,
+        applies = "frost_fever", appliesFor = 15, openerSkipIfUp = true,
     },
     plague_strike = {
         key = "plague_strike", id = 49921, harmful = true, castableMoving = true,
         runes = { unholy = 1 }, generatesRP = 10,
-        applies = "blood_plague", appliesFor = 15,
+        applies = "blood_plague", appliesFor = 15, openerSkipIfUp = true,
     },
     scourge_strike = {
         key = "scourge_strike", id = 55271, harmful = true, castableMoving = true,

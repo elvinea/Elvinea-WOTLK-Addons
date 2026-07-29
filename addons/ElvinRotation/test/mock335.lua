@@ -71,6 +71,188 @@ for _, e in ipairs({
     { name = "Unholy Presence",     id = 48265 },
     { name = "Pestilence",          id = 50842 },
     { name = "Bone Shield",         id = 49222 },
+    -- Rogue
+    { name = "Mutilate",            id = 48666 },
+    { name = "Envenom",             id = 57993 },
+    { name = "Rupture",             id = 48672 },
+    { name = "Slice and Dice",      id = 6774  },
+    { name = "Expose Armor",        id = 48669 },
+    { name = "Hunger for Blood",    id = 51662 },
+    { name = "Garrote",             id = 48676 },
+    { name = "Ambush",              id = 48691 },
+    { name = "Fan of Knives",       id = 51723 },
+    { name = "Cold Blood",          id = 14177 },
+    { name = "Kick",                id = 1766  },
+    { name = "Stealth",             id = 1787  },
+    -- Paladin
+    { name = "Crusader Strike",     id = 35395 },
+    { name = "Divine Storm",        id = 53385 },
+    { name = "Judgement of Wisdom", id = 53408 },
+    { name = "Judgement of Light",  id = 20271 },
+    { name = "Consecration",        id = 48819 },
+    { name = "Exorcism",            id = 48801 },
+    { name = "Hammer of Wrath",     id = 48806 },
+    { name = "Holy Wrath",          id = 48817 },
+    { name = "Avenging Wrath",      id = 31884 },
+    { name = "Divine Plea",         id = 54428 },
+    { name = "Seal of Vengeance",   id = 31801 },
+    { name = "Seal of Command",     id = 20375 },
+    -- Warlock
+    { name = "Corruption",             id = 47813 },
+    { name = "Unstable Affliction",    id = 47843 },
+    { name = "Haunt",                  id = 59164 },
+    { name = "Curse of Agony",         id = 47864 },
+    { name = "Shadow Bolt",            id = 47809 },
+    { name = "Drain Soul",             id = 47855 },
+    { name = "Life Tap",               id = 57946 },
+    { name = "Fel Armor",              id = 47893 },
+    { name = "Shadowflame",            id = 61291 },
+    { name = "Seed of Corruption",     id = 47836 },
+    { name = "Drain Life",             id = 47857 },
+    { name = "Death Coil",             id = 47860 },
+    -- Mage
+    { name = "Arcane Blast",           id = 42897 },
+    { name = "Arcane Missiles",        id = 42846 },
+    { name = "Arcane Barrage",         id = 44781 },
+    { name = "Arcane Explosion",       id = 42921 },
+    { name = "Blizzard",               id = 42940 },
+    { name = "Flamestrike",            id = 42926 },
+    { name = "Evocation",              id = 12051 },
+    { name = "Arcane Power",           id = 12042 },
+    { name = "Presence of Mind",       id = 12043 },
+    { name = "Mirror Image",           id = 55342 },
+    { name = "Icy Veins",              id = 12472 },
+    { name = "Molten Armor",           id = 43046 },
+    { name = "Counterspell",           id = 2139  },
+    -- Druid
+    { name = "Wrath",                  id = 48461 },
+    { name = "Starfire",               id = 48465 },
+    { name = "Moonfire",               id = 48463 },
+    { name = "Insect Swarm",           id = 48468 },
+    { name = "Starfall",               id = 53201 },
+    { name = "Force of Nature",        id = 33831 },
+    { name = "Typhoon",                id = 61384 },
+    { name = "Hurricane",              id = 48467 },
+    { name = "Faerie Fire",            id = 770   },
+    { name = "Moonkin Form",           id = 24858 },
+    -- Warrior
+    { name = "Mortal Strike",          id = 47486 },
+    { name = "Rend",                   id = 47465 },
+    { name = "Overpower",              id = 7384  },
+    { name = "Slam",                   id = 47475 },
+    { name = "Execute",                id = 47471 },
+    { name = "Bladestorm",             id = 46924 },
+    { name = "Heroic Strike",          id = 47450 },
+    { name = "Cleave",                 id = 47520 },
+    { name = "Sweeping Strikes",       id = 12328 },
+    { name = "Recklessness",           id = 1719  },
+    { name = "Bloodrage",              id = 2687  },
+    { name = "Battle Shout",           id = 47436 },
+    { name = "Sunder Armor",           id = 7386  },
+    { name = "Victory Rush",           id = 34428 },
+    { name = "Battle Stance",          id = 2457  },
+    { name = "Berserker Stance",       id = 2458  },
+    { name = "Pummel",                 id = 6552  },
+    -- Hunter
+    { name = "Explosive Shot",         id = 60053 },
+    { name = "Black Arrow",            id = 63672 },
+    { name = "Aimed Shot",             id = 49050 },
+    { name = "Steady Shot",            id = 49052 },
+    { name = "Serpent Sting",          id = 49001 },
+    { name = "Kill Shot",              id = 61006 },
+    { name = "Multi-Shot",             id = 49048 },
+    { name = "Volley",                 id = 58434 },
+    { name = "Explosive Trap",         id = 49067 },
+    { name = "Kill Command",           id = 34026 },
+    { name = "Rapid Fire",             id = 3045  },
+    { name = "Call of the Wild",       id = 53434 },
+    { name = "Hunter's Mark",          id = 53338 },
+    { name = "Aspect of the Dragonhawk", id = 61847 },
+    -- Shaman
+    { name = "Stormstrike",            id = 17364 },
+    { name = "Lava Lash",              id = 60103 },
+    { name = "Earth Shock",            id = 49231 },
+    { name = "Flame Shock",            id = 49233 },
+    { name = "Lightning Bolt",         id = 49238 },
+    { name = "Chain Lightning",        id = 49271 },
+    { name = "Fire Nova",              id = 61657 },
+    { name = "Magma Totem",            id = 58734 },
+    { name = "Lightning Shield",       id = 49281 },
+    { name = "Feral Spirit",           id = 51533 },
+    { name = "Fire Elemental Totem",   id = 2894  },
+    { name = "Shamanistic Rage",       id = 30823 },
+    { name = "Wind Shear",             id = 57994 },
+    -- Fire Mage
+    { name = "Fireball",               id = 42833 },
+    { name = "Frostfire Bolt",         id = 47610 },
+    { name = "Pyroblast",              id = 42891 },
+    { name = "Living Bomb",            id = 55360 },
+    { name = "Scorch",                 id = 42859 },
+    { name = "Fire Blast",             id = 42873 },
+    { name = "Blast Wave",             id = 42945 },
+    { name = "Dragon's Breath",        id = 42950 },
+    { name = "Combustion",             id = 11129 },
+    -- Destruction Warlock
+    { name = "Immolate",               id = 47811 },
+    { name = "Conflagrate",            id = 17962 },
+    { name = "Chaos Bolt",             id = 59172 },
+    { name = "Incinerate",             id = 47838 },
+    { name = "Curse of Doom",          id = 47867 },
+    -- Frost Mage
+    { name = "Frostbolt",              id = 42842 },
+    { name = "Deep Freeze",            id = 44572 },
+    { name = "Ice Lance",              id = 42914 },
+    { name = "Cone of Cold",           id = 42931 },
+    { name = "Cold Snap",              id = 11958 },
+    { name = "Summon Water Elemental", id = 31687 },
+    -- Marksmanship Hunter
+    { name = "Chimera Shot",           id = 53209 },
+    { name = "Arcane Shot",            id = 49045 },
+    { name = "Readiness",              id = 23989 },
+    { name = "Silencing Shot",         id = 34490 },
+    { name = "Aspect of the Viper",    id = 34074 },
+    -- Blood DK
+    { name = "Heart Strike",           id = 55262 },
+    { name = "Dancing Rune Weapon",    id = 49028 },
+    { name = "Unholy Frenzy",          id = 49016 },
+    -- Demonology
+    { name = "Soul Fire",              id = 47825 },
+    { name = "Metamorphosis",          id = 47241 },
+    { name = "Demonic Empowerment",    id = 47193 },
+    { name = "Immolation Aura",        id = 50589 },
+    -- Beast Mastery
+    { name = "Bestial Wrath",          id = 19574 },
+    { name = "Intimidation",           id = 19577 },
+    -- Fury
+    { name = "Bloodthirst",            id = 23881 },
+    { name = "Whirlwind",              id = 1680  },
+    { name = "Death Wish",             id = 12292 },
+    -- Feral
+    { name = "Shred",                  id = 48572 },
+    { name = "Mangle (Cat)",           id = 48566 },
+    { name = "Rake",                   id = 48574 },
+    { name = "Rip",                    id = 49800 },
+    { name = "Savage Roar",            id = 52610 },
+    { name = "Ferocious Bite",         id = 48577 },
+    { name = "Tiger's Fury",           id = 50213 },
+    { name = "Berserk",                id = 50334 },
+    { name = "Faerie Fire (Feral)",    id = 60401 },
+    { name = "Cat Form",               id = 768   },
+    -- Combat / Subtlety Rogue
+    { name = "Sinister Strike",        id = 48638 },
+    { name = "Eviscerate",             id = 48668 },
+    { name = "Killing Spree",          id = 51690 },
+    { name = "Adrenaline Rush",        id = 13750 },
+    { name = "Blade Flurry",           id = 13877 },
+    { name = "Hemorrhage",             id = 48660 },
+    { name = "Backstab",               id = 48657 },
+    { name = "Shadow Dance",           id = 51713 },
+    { name = "Premeditation",          id = 14183 },
+    -- Elemental Shaman
+    { name = "Lava Burst",             id = 60043 },
+    { name = "Thunderstorm",           id = 59159 },
+    { name = "Elemental Mastery",      id = 16166 },
+    { name = "Water Shield",           id = 57960 },
     { name = "Mind Sear",           id = 53023 },
 }) do
     table.insert(spellbook, { name = e.name, id = e.id, cast = 0, cd = 0 })
@@ -278,6 +460,14 @@ local function auraAt(list, i)
 end
 function UnitBuff(u, i)   return auraAt(playerBuffs, i) end
 function UnitDebuff(u, i) return auraAt(targetDebuffs, i) end
+function M.addDebuff(name, id, remains, caster)
+    table.insert(targetDebuffs, {
+        name = name, id = id, count = 1,
+        expires = clock + (remains or 15), duration = remains or 15,
+        caster = caster,
+    })
+end
+function M.clearDebuffs() for i = #targetDebuffs, 1, -1 do targetDebuffs[i] = nil end end
 
 -- action bars: put a few spells on slots 1..12
 local actions = { [1]="Mind Flay", [2]="Mind Blast", [3]="Shadow Word: Pain", [14]="Mind Blast",
@@ -383,9 +573,19 @@ function M.resetRunes()
     end
 end
 
-local power = { [6] = 0 }
+local combo = 0
+function GetComboPoints(u, t) return combo end
+function M.setComboPoints(n) combo = n end
+
+local power = { [6] = 0, [3] = 100, [1] = 0, [0] = 0 }
 function UnitPower(u, t) return power[t] or 0 end
-function UnitPowerMax(u, t) return t == 6 and 130 or 0 end
+function UnitPowerMax(u, t)
+    if t == 6 then return 130 end
+    if t == 3 then return 100 end
+    if t == 1 then return 100 end
+    return 0
+end
+function M.setPower(t, v) power[t] = v end
 function M.setRunicPower(v) power[6] = v end
 
 -- glyphs

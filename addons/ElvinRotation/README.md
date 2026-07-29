@@ -62,6 +62,12 @@ It catches API misuse, wrong spell IDs, keybind resolution and structural
 mistakes in priority lists. It cannot tell you a rotation is wrong — only a
 player can.
 
+## History
+
+See [CHANGELOG.md](CHANGELOG.md). Worth reading if you plan to add a spec —
+almost every entry is a bug in client integration rather than rotation logic,
+and the same traps will be waiting.
+
 ## Credits and licence
 
 Licensed **GPL v3**, because it is a derivative work of

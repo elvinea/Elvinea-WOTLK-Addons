@@ -131,12 +131,40 @@ function C.FindDebuff(unit, spellName, spellID, mineOnly)
     for i = 1, 40 do
         local name, _, _, count, _, duration, expires, caster, _, _, id = UnitDebuff(unit, i)
         if not name then break end
-        if ((spellName and name == spellName) or (id and id == spellID))
-           and (not mineOnly or caster == "player") then
-            return (count and count > 0) and count or 1, expires or 0, duration or 0
+
+        local matches = (spellName and name == spellName) or (id and id == spellID)
+        if matches then
+            -- "Is it mine?" is only enforceable when the client tells
+            -- us who cast it. On 3.3.5 unitCaster is frequently nil for
+            -- units outside your group, and rejecting on a nil caster
+            -- meant a disease that was plainly ticking read as absent -
+            -- so the addon kept telling you to reapply it.
+            local ok = true
+            if mineOnly and caster and caster ~= "player"
+               and caster ~= "pet" and caster ~= "vehicle" then
+                ok = false
+            end
+            if ok then
+                return (count and count > 0) and count or 1, expires or 0, duration or 0
+            end
         end
     end
     return nil
+end
+
+-- Dump everything currently on a unit, for diagnosis.
+function C.DumpAuras(unit)
+    local out = {}
+    for i = 1, 40 do
+        local name, _, _, count, _, duration, expires, caster, _, _, id = UnitDebuff(unit, i)
+        if not name then break end
+        table.insert(out, {
+            index = i, name = name, id = id, count = count,
+            caster = caster, duration = duration,
+            remains = expires and expires > 0 and (expires - GetTime()) or -1,
+        })
+    end
+    return out
 end
 
 --------------------------------------------------------------------
@@ -716,7 +744,18 @@ function C.FindActionSlots(spellName)
             end
         elseif actionType == "macro" and id then
             if macroCastsSpell(id, spellName) then
-                table.insert(out, { slot = slot, kind = "macro" })
+                -- A macro naming several spells matches all of them.
+                -- Its ICON tells us which one it actually shows, so a
+                -- texture match is far stronger evidence than a name
+                -- appearing somewhere in the body.
+                local kind = "macro"
+                if GetActionTexture then
+                    local want = select(3, GetSpellInfo(spellName))
+                    if want and GetActionTexture(slot) == want then
+                        kind = "macro-icon"
+                    end
+                end
+                table.insert(out, { slot = slot, kind = kind })
             end
         end
     end
@@ -756,7 +795,7 @@ function C.Keybind(spellName)
     -- source still beats a macro guess with a strong one - otherwise
     -- one multi-spell macro claims every ability it names.
     local slots = C.FindActionSlots(spellName)
-    local KIND = { spell = 300, macro = 100, texture = 50 }
+    local KIND = { spell = 300, ["macro-icon"] = 200, macro = 100, texture = 50 }
 
     local best, bestScore
     for _, e in ipairs(slots) do
@@ -792,7 +831,7 @@ function C.KeybindDiagnosis(spellName)
     if #slots == 0 then return "not on any bar" end
     if keyMapStale then C.BuildKeybindMap() end
 
-    local KIND = { spell = 300, macro = 100, texture = 50 }
+    local KIND = { spell = 300, ["macro-icon"] = 200, macro = 100, texture = 50 }
     local best, bestScore, bestKind
     for _, e in ipairs(slots) do
         local entry = keyMap[e.slot]

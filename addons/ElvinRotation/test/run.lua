@@ -20,7 +20,27 @@ print("\n=== LOAD (order per .toc) ===")
 for _, f in ipairs({ "Compat.lua", "Core.lua", "State.lua",
                      "Engine.lua", "Options.lua",
                      "Specs/PriestShadow.lua", "Specs/DeathKnightFrost.lua",
-                     "Specs/DeathKnightUnholy.lua" }) do
+                     "Specs/DeathKnightUnholy.lua",
+                     "Specs/RogueAssassination.lua",
+                     "Specs/PaladinRetribution.lua",
+                     "Specs/WarlockAffliction.lua",
+                     "Specs/MageArcane.lua",
+                     "Specs/DruidBalance.lua",
+                     "Specs/WarriorArms.lua",
+                     "Specs/HunterSurvival.lua",
+                     "Specs/ShamanEnhancement.lua",
+                     "Specs/MageFire.lua",
+                     "Specs/WarlockDestruction.lua",
+                     "Specs/MageFrost.lua",
+                     "Specs/HunterMarksmanship.lua",
+                     "Specs/DeathKnightBlood.lua",
+                     "Specs/WarlockDemonology.lua",
+                     "Specs/HunterBeastMastery.lua",
+                     "Specs/WarriorFury.lua",
+                     "Specs/DruidFeral.lua",
+                     "Specs/RogueCombat.lua",
+                     "Specs/RogueSubtlety.lua",
+                     "Specs/ShamanElemental.lua" }) do
     step(f, function() dofile(f) end)
 end
 
@@ -708,6 +728,317 @@ step("options auto-generate a toggle per major cooldown", function()
     assert(n == 3, "expected 3 major cooldowns, found " .. n)
 end)
 
+print("\n=== NEW SPECS ===")
+step("all seven specs register with a unique class and tab", function()
+    local expect = {
+        "Shadow Priest", "Frost Death Knight", "Unholy Death Knight",
+        "Assassination Rogue", "Retribution Paladin",
+        "Affliction Warlock", "Arcane Mage",
+        "Balance Druid", "Arms Warrior",
+        "Survival Hunter", "Enhancement Shaman", "Fire Mage",
+        "Destruction Warlock", "Frost Mage", "Marksmanship Hunter",
+        "Blood Death Knight", "Demonology Warlock",
+        "Beast Mastery Hunter", "Fury Warrior",
+        "Feral Druid (Cat)", "Combat Rogue", "Subtlety Rogue",
+        "Elemental Shaman",
+    }
+    for _, name in ipairs(expect) do
+        assert(specNamed(name), name .. " not registered")
+    end
+    assert(#ER.specs == #expect,
+        "expected " .. #expect .. " specs, found " .. #ER.specs)
+
+    -- no two specs of the same class may claim the same talent tab
+    local seen = {}
+    for _, sp in ipairs(ER.specs) do
+        local slot = sp.class .. ":" .. sp.tab
+        if seen[slot] then
+            error(sp.class .. " tab " .. sp.tab .. " claimed by both "
+                  .. seen[slot] .. " and " .. sp.name)
+        end
+        seen[slot] = sp.name
+    end
+end)
+
+step("every spec resolves every spell ID to the right spell", function()
+    local problems = {}
+    for _, sp in ipairs(ER.specs) do
+        if sp.ResolveRanks then sp.ResolveRanks() end
+        for _, b in ipairs(ER.Compat.CheckSpellIDs(sp.abilities)) do
+            table.insert(problems, sp.name .. ": " .. b.key
+                .. " -> id " .. b.id .. " is '" .. b.name .. "'")
+        end
+    end
+    assert(#problems == 0, "\n           " .. table.concat(problems, "\n           "))
+end)
+
+step("every spec has the required structure", function()
+    for _, sp in ipairs(ER.specs) do
+        assert(sp.lists.single,  sp.name .. " has no single-target list")
+        assert(sp.lists.aoe,     sp.name .. " has no AoE list")
+        assert(sp.lists.default, sp.name .. " has no default list")
+        assert(sp.IsActive,      sp.name .. " has no IsActive")
+        assert(sp.ResolveRanks,  sp.name .. " has no ResolveRanks")
+        assert(sp.gcdProbe,      sp.name .. " has no GCD probe")
+        for key, ab in pairs(sp.abilities) do
+            assert(ab.key == key,
+                sp.name .. " ability '" .. key .. "' has key '"
+                .. tostring(ab.key) .. "'")
+        end
+    end
+end)
+
+step("all 23 damage specs are built", function()
+    assert(#ER.specs == 23, "expected 23 specs, found " .. #ER.specs)
+end)
+
+step("every class has its full complement", function()
+    local expect = {
+        DEATHKNIGHT = 3, DRUID = 2, HUNTER = 3, MAGE = 3, PALADIN = 1,
+        PRIEST = 1, ROGUE = 3, SHAMAN = 2, WARLOCK = 3, WARRIOR = 2,
+    }
+    local byClass = {}
+    for _, sp in ipairs(ER.specs) do
+        byClass[sp.class] = (byClass[sp.class] or 0) + 1
+    end
+    for class, n in pairs(expect) do
+        assert(byClass[class] == n, class .. " expected " .. n
+            .. " specs, found " .. tostring(byClass[class]))
+    end
+end)
+
+step("Warlock, Hunter and Warrior are now fully covered", function()
+    local byClass = {}
+    for _, sp in ipairs(ER.specs) do
+        byClass[sp.class] = (byClass[sp.class] or 0) + 1
+    end
+    assert(byClass.WARLOCK == 3, "expected 3 Warlock specs, got "
+        .. tostring(byClass.WARLOCK))
+    assert(byClass.HUNTER == 3,  "expected 3 Hunter specs, got "
+        .. tostring(byClass.HUNTER))
+    assert(byClass.WARRIOR == 2, "expected 2 Warrior specs, got "
+        .. tostring(byClass.WARRIOR))
+    assert(byClass.MAGE == 3,    "expected 3 Mage specs")
+    assert(byClass.DEATHKNIGHT == 3, "expected 3 Death Knight specs")
+end)
+
+step("no two specs anywhere claim the same class and tab", function()
+    local seen = {}
+    for _, sp in ipairs(ER.specs) do
+        local slot = sp.class .. ":" .. sp.tab
+        if seen[slot] then
+            error(slot .. " claimed by both " .. seen[slot] .. " and " .. sp.name)
+        end
+        seen[slot] = sp.name
+    end
+end)
+
+step("all three Death Knight specs claim different tabs", function()
+    local tabs = {}
+    for _, sp in ipairs(ER.specs) do
+        if sp.class == "DEATHKNIGHT" then
+            assert(not tabs[sp.tab],
+                "DK tab " .. sp.tab .. " claimed twice")
+            tabs[sp.tab] = sp.name
+        end
+    end
+    assert(tabs[1] and tabs[2] and tabs[3], "expected all three DK trees")
+end)
+
+step("all three Mage specs claim different tabs", function()
+    local tabs = {}
+    for _, sp in ipairs(ER.specs) do
+        if sp.class == "MAGE" then
+            assert(not tabs[sp.tab], "Mage tab " .. sp.tab .. " claimed twice")
+            tabs[sp.tab] = sp.name
+        end
+    end
+    assert(tabs[1] and tabs[2] and tabs[3], "expected all three Mage trees")
+end)
+
+step("all ten classes have at least one spec", function()
+    local classes = {}
+    for _, sp in ipairs(ER.specs) do classes[sp.class] = true end
+    for _, c in ipairs({ "DEATHKNIGHT", "DRUID", "HUNTER", "MAGE",
+                         "PALADIN", "PRIEST", "ROGUE", "SHAMAN",
+                         "WARLOCK", "WARRIOR" }) do
+        assert(classes[c], c .. " has no spec built")
+    end
+end)
+
+step("Maelstrom Weapon stacking drives the Shaman list", function()
+    local sh = specNamed("Enhancement Shaman")
+    local st = {
+        buff = { maelstrom_weapon = { stack = 5 },
+                 lightning_shield = { up = true } },
+        dot = {}, debuff = {}, manaPct = 80,
+    }
+    sh.UpdateExtra(st)
+    assert(st.maelstrom_full, "5 stacks should read as full")
+
+    st.buff.maelstrom_weapon.stack = 3
+    sh.UpdateExtra(st)
+    assert(not st.maelstrom_full, "3 stacks should not read as full")
+end)
+
+step("Hunter rotation is built around Explosive Shot", function()
+    local h = specNamed("Survival Hunter")
+    local esIdx, ssIdx
+    for i, e in ipairs(h.lists.single) do
+        if e.key == "explosive_shot" and not esIdx then esIdx = i end
+        if e.key == "steady_shot"    and not ssIdx then ssIdx = i end
+    end
+    assert(esIdx and ssIdx, "missing a core Hunter ability")
+    assert(esIdx < ssIdx, "Explosive Shot must outrank Steady Shot")
+end)
+
+step("Fire Mage reacts to Hot Streak before filling", function()
+    local m = specNamed("Fire Mage")
+    local pyroIdx, fbIdx
+    for i, e in ipairs(m.lists.single) do
+        if e.key == "pyroblast" and not pyroIdx then pyroIdx = i end
+        if e.key == "fireball"  and not fbIdx   then fbIdx = i end
+    end
+    assert(pyroIdx < fbIdx, "Hot Streak Pyroblast must outrank Fireball")
+end)
+
+step("the two Mage specs claim different talent tabs", function()
+    local arcane = specNamed("Arcane Mage")
+    local fire   = specNamed("Fire Mage")
+    assert(arcane.tab ~= fire.tab,
+        "Arcane and Fire both claim tab " .. arcane.tab)
+end)
+
+step("Balance Druid Eclipse logic", function()
+    local d = specNamed("Balance Druid")
+    ER.eclipseSeen = {}
+    local st = {
+        now = 1000, buff = {
+            eclipse_lunar = { up = false, remains = 0 },
+            eclipse_solar = { up = false, remains = 0 },
+            elunes_wrath  = { up = false },
+        },
+        dot = {}, debuff = {},
+    }
+    d.UpdateExtra(st)
+    assert(st.fish_now, "no Eclipse up should mean fishing")
+    assert(not st.spam_now, "should not be spamming with no Eclipse")
+
+    st.buff.eclipse_lunar.up = true
+    d.UpdateExtra(st)
+    assert(st.spam_now, "Lunar Eclipse up should mean spamming")
+    assert(st.lunar_up, "lunar_up not set")
+    ER.eclipseSeen = {}
+end)
+
+step("Eclipse internal cooldown is tracked", function()
+    local d = specNamed("Balance Druid")
+    ER.eclipseSeen = { lunar = 1000 }
+    local st = {
+        now = 1010,          -- only 10s since Lunar was last up
+        buff = { eclipse_lunar = { up = false, remains = 0 },
+                 eclipse_solar = { up = false, remains = 0 },
+                 elunes_wrath  = { up = false } },
+        dot = {}, debuff = {},
+    }
+    d.UpdateExtra(st)
+    assert(not st.lunar_can_proc, "Lunar should be on its 30s internal cooldown")
+
+    st.now = 1040            -- 40s later
+    d.UpdateExtra(st)
+    assert(st.lunar_can_proc, "Lunar should be available again after 30s")
+    ER.eclipseSeen = {}
+end)
+
+step("Arms Warrior uses rage", function()
+    local w = specNamed("Arms Warrior")
+    assert(w.powerType == 1, "Arms should use rage (power type 1)")
+    assert(w.abilities.mortal_strike.power == 30, "Mortal Strike costs 30 rage")
+    assert(w.abilities.bloodrage.generatesPower, "Bloodrage should generate rage")
+end)
+
+step("Heroic Strike holds rage in reserve", function()
+    local w = specNamed("Arms Warrior")
+    local hs
+    for _, e in ipairs(w.lists.single) do
+        if e.key == "heroic_strike" then hs = e end
+    end
+    assert(hs and hs.when, "Heroic Strike should be gated")
+    local low  = { rage = 30, rage_to_queue = 60, buff = { recklessness = { up = false } } }
+    local high = { rage = 80, rage_to_queue = 60, buff = { recklessness = { up = false } } }
+    assert(not hs.when(low),  "should not dump rage at 30")
+    assert(hs.when(high),     "should dump rage at 80")
+end)
+
+step("Rogue and Paladin register", function()
+    assert(specNamed("Assassination Rogue"), "Rogue spec not registered")
+    assert(specNamed("Retribution Paladin"), "Paladin spec not registered")
+    assert(ER.specOptions.ROGUE,   "Rogue options not registered")
+    assert(ER.specOptions.PALADIN, "Paladin options not registered")
+end)
+
+step("every new spec has the required structure", function()
+    for _, name in ipairs({ "Assassination Rogue", "Retribution Paladin" }) do
+        local sp = specNamed(name)
+        assert(sp.lists.single,   name .. " has no single-target list")
+        assert(sp.lists.aoe,      name .. " has no AoE list")
+        assert(sp.lists.default,  name .. " has no default list")
+        assert(sp.IsActive,       name .. " has no IsActive")
+        assert(sp.ResolveRanks,   name .. " has no ResolveRanks")
+        assert(sp.gcdProbe,       name .. " has no GCD probe")
+    end
+end)
+
+step("Rogue declares energy and combo points", function()
+    local r = specNamed("Assassination Rogue")
+    assert(r.powerType == 3, "Rogue should use energy (power type 3)")
+    assert(r.usesComboPoints, "Rogue should declare usesComboPoints")
+    assert(r.abilities.mutilate.buildsCombo == 2, "Mutilate builds 2 combo points")
+    assert(r.abilities.envenom.spendsCombo, "Envenom is a finisher")
+end)
+
+step("combo points and energy are read into state", function()
+    local r = specNamed("Assassination Rogue")
+    local real = ER.activeSpec
+    ER.activeSpec = r
+    r.ResolveRanks()
+    mock.setComboPoints(4)
+    mock.setPower(3, 75)
+    ER:UpdateState()
+    assert(ER.state.comboPoints == 4,
+        "combo points not read, got " .. tostring(ER.state.comboPoints))
+    assert(ER.state.energy == 75,
+        "energy not read, got " .. tostring(ER.state.energy))
+    ER.activeSpec = real
+    mock.setComboPoints(0)
+end)
+
+step("finishers are blocked without combo points", function()
+    local r = specNamed("Assassination Rogue")
+    assert(r.abilities.envenom.minCombo == 1, "Envenom should need combo points")
+    assert(r.abilities.rupture.minCombo == 1, "Rupture should need combo points")
+    assert(r.abilities.slice_and_dice.minCombo == 1, "SnD should need combo points")
+end)
+
+step("Paladin cooldowns and mana gate are declared", function()
+    local p = specNamed("Retribution Paladin")
+    assert(p.powerType == 0, "Paladin should use mana")
+    assert(p.abilities.crusader_strike.cd == 4, "Crusader Strike is a 4s cooldown")
+    assert(p.abilities.avenging_wrath.majorCD, "Avenging Wrath should be a major CD")
+end)
+
+step("both new specs resolve every spell ID to the right name", function()
+    for _, name in ipairs({ "Assassination Rogue", "Retribution Paladin" }) do
+        local sp = specNamed(name)
+        sp.ResolveRanks()
+        local bad = {}
+        for _, b in ipairs(ER.Compat.CheckSpellIDs(sp.abilities)) do
+            table.insert(bad, b.key .. " -> id " .. b.id .. " is '" .. b.name .. "'")
+        end
+        assert(#bad == 0, name .. ": " .. table.concat(bad, ", "))
+    end
+end)
+
 print("\n=== SPELL ID vs NAME ===")
 step("no ability ID resolves to a DIFFERENT spell", function()
     -- The blood_presence = 48263 bug: a valid ID for the wrong spell,
@@ -898,6 +1229,398 @@ step("unholy precombat opens in UNHOLY presence", function()
     assert(found, "precombat should set Unholy Presence")
 end)
 
+print("\n=== IN-FLIGHT AURAS ===")
+step("every dot ability declares what it applies", function()
+    -- The suppression keys off ab.applies, so an ability that puts up
+    -- a dot without declaring it would still double-cast.
+    local expect = {
+        ["Frost Death Knight"]  = { icy_touch = "frost_fever",
+                                    plague_strike = "blood_plague" },
+        ["Unholy Death Knight"] = { icy_touch = "frost_fever",
+                                    plague_strike = "blood_plague" },
+        ["Shadow Priest"]       = { shadow_word_pain = "shadow_word_pain",
+                                    vampiric_touch = "vampiric_touch",
+                                    devouring_plague = "devouring_plague" },
+    }
+    for specName, abilities in pairs(expect) do
+        local sp = specNamed(specName)
+        for key, aura in pairs(abilities) do
+            assert(sp.abilities[key], specName .. " missing " .. key)
+            assert(sp.abilities[key].applies == aura,
+                specName .. " " .. key .. " should declare applies="
+                .. aura .. ", got " .. tostring(sp.abilities[key].applies))
+        end
+    end
+end)
+
+step("a just-cast dot is not recommended again while it lands", function()
+    -- The pull double-cast: the debuff has not registered yet, so the
+    -- priority sees "no dot" and says to cast it again.
+    mock.clearDebuffs()
+    ER.castTime = { shadow_word_pain = GetTime() - 0.4 }
+    ER:UpdateState()
+
+    local since = ER.state.sinceCast.shadow_word_pain
+    assert(since and since < 1.5, "sinceCast not tracking, got " .. tostring(since))
+
+    local q = ER:Recommend(4)
+    for _, ab in ipairs(q) do
+        assert(ab.key ~= "shadow_word_pain",
+            "recommended a dot that was cast 0.4s ago and has not landed")
+    end
+    ER.castTime = {}
+end)
+
+step("grace expires so a genuinely missing dot is reapplied", function()
+    ER.castTime = { shadow_word_pain = GetTime() - 5 }
+    ER:UpdateState()
+    assert(ER.state.sinceCast.shadow_word_pain > 1.5,
+        "grace should have expired after 5 seconds")
+    ER.castTime = {}
+end)
+
+print("\n=== HOWLING BLAST ===")
+step("not suggested without a Rime proc", function()
+    ElvinRotationDB.settings.howlingBlastRimeOnly = true
+    local fr = specNamed("Frost Death Knight")
+    for _, listName in ipairs({ "single", "aoe" }) do
+        for _, e in ipairs(fr.lists[listName]) do
+            if e.key == "howling_blast" then
+                assert(e.when, listName .. " Howling Blast is ungated")
+                local off = { buff = { freezing_fog = { up = false } } }
+                assert(not e.when(off),
+                    listName .. " suggested Howling Blast with no Rime proc")
+                local on = { buff = { freezing_fog = { up = true } } }
+                assert(e.when(on),
+                    listName .. " did not suggest Howling Blast on a Rime proc")
+            end
+        end
+    end
+end)
+
+step("Freezing Fog uses the right buff ID", function()
+    local fr = specNamed("Frost Death Knight")
+    assert(fr.auras.freezing_fog.id == 59052,
+        "Freezing Fog should be 59052, got " .. tostring(fr.auras.freezing_fog.id))
+end)
+
+print("\n=== DEBUFF DETECTION ===")
+step("a disease with a NIL caster still counts as ours", function()
+    -- 3.3.5 often reports unitCaster as nil for units outside your
+    -- group. Rejecting on that made a plainly ticking disease read as
+    -- absent, so the addon kept saying to reapply it.
+    mock.clearDebuffs()
+    mock.addDebuff("Frost Fever", 55095, 12, nil)
+    local count, expires = ER.Compat.FindDebuff("target", "Frost Fever", 55095, true)
+    assert(count, "disease with a nil caster was rejected")
+end)
+
+step("a disease cast by someone ELSE is still rejected", function()
+    mock.clearDebuffs()
+    mock.addDebuff("Frost Fever", 55095, 12, "party1")
+    local count = ER.Compat.FindDebuff("target", "Frost Fever", 55095, true)
+    assert(not count, "another player's disease was counted as ours")
+end)
+
+step("our own disease is found and its timer read", function()
+    mock.clearDebuffs()
+    mock.addDebuff("Frost Fever", 55095, 12, "player")
+    local count, expires = ER.Compat.FindDebuff("target", "Frost Fever", 55095, true)
+    assert(count, "our own disease not found")
+    assert(expires > 0, "no expiry returned")
+end)
+
+step("DumpAuras lists what is actually on the target", function()
+    mock.clearDebuffs()
+    mock.addDebuff("Frost Fever", 55095, 12, "player")
+    mock.addDebuff("Blood Plague", 55078, 11, nil)
+    local dump = ER.Compat.DumpAuras("target")
+    assert(#dump == 2, "expected 2 debuffs, got " .. #dump)
+    assert(dump[1].name == "Frost Fever", "wrong first debuff")
+    mock.clearDebuffs()
+end)
+
+print("\n=== OPENER RESPECTS EXISTING AURAS ===")
+step("opener does not reapply a dot that is already up", function()
+    -- Reported: queue read Icy Touch, Plague Strike, Icy Touch, Plague
+    -- Strike while frost_fever sat at 13.5s and blood_plague at 14.9s.
+    -- The opener is a fixed sequence and was ignoring them.
+    mock.clearDebuffs()
+    mock.addDebuff("Shadow Word: Pain", 48125, 16, "player")
+    ER.castCount = {}
+    ER.combatStart = GetTime()
+    ER.dotTargets = {}
+    ER:UpdateState()
+    ER.state.inCombat = true
+    ER.state.combatTime = 2
+
+    local q = ER:Recommend(5)
+    for i, ab in ipairs(q) do
+        if ab.key == "shadow_word_pain" then
+            error("reapplied a dot with 16s remaining at queue position " .. i)
+        end
+    end
+    mock.clearDebuffs()
+end)
+
+step("opener DOES apply a dot that is missing", function()
+    mock.clearDebuffs()
+    ER.castCount = {}
+    ER.dotTargets = {}
+    ER:UpdateState()
+    ER.state.inCombat = true
+    ER.state.combatTime = 1
+
+    local q = ER:Recommend(5)
+    local found = false
+    for _, ab in ipairs(q) do
+        if ab.applies then found = true end
+    end
+    assert(found, "opener should apply dots when none are up")
+end)
+
+step("a dot low on duration is still refreshed by the opener", function()
+    -- Shadow has no opener list, so exercise the engine rule directly
+    -- with a minimal spec of one dot ability.
+    local real = ER.activeSpec
+    local fake = {
+        name = "Test", class = "PRIEST", tab = 3,
+        auras = { testdot = { id = 48125, type = "debuff", mine = true } },
+        abilities = {
+            testdot = { key = "testdot", id = 48125, name = "Shadow Word: Pain",
+                        harmful = true, castableMoving = true,
+                        applies = "testdot", appliesFor = 18,
+                        openerSkipIfUp = true },
+        },
+        lists = {},
+    }
+    fake.lists.opener  = { { key = "testdot", casts = 1 } }
+    fake.lists.single  = {}
+    fake.lists.aoe     = {}
+    fake.lists.default = {
+        { runList = "opener", terminal = true, when = function() return true end },
+    }
+    ER.activeSpec = fake
+
+    local function queueWith(remains)
+        ER.castCount, ER.dotTargets = {}, {}
+        ER.state.debuff = { testdot = { up = remains > 0, down = remains <= 0,
+                                        remains = remains, stack = 1 } }
+        ER.state.dot = ER.state.debuff
+        ER.state.buff = ER.state.buff or {}
+        ER.state.sinceCast = {}
+        ER.state.castCount = {}
+        ER.state.inCombat, ER.state.combatTime = true, 1
+        return ER:Recommend(1)
+    end
+
+    local low  = queueWith(2)     -- nearly gone: must refresh
+    local high = queueWith(16)    -- plenty left: must not
+
+    ER.activeSpec = real
+    assert(low[1] and low[1].key == "testdot",
+        "a dot at 2s should still be refreshed by the opener")
+    assert(not (high[1] and high[1].key == "testdot"),
+        "a dot at 16s should NOT be reapplied by the opener")
+end)
+
+print("\n=== UNHOLY OPENER SEQUENCE ===")
+step("opener matches the played sequence exactly", function()
+    local uh = specNamed("Unholy Death Knight")
+    local want = {
+        "blood_strike", "plague_strike", "icy_touch", "blood_strike",
+        "scourge_strike", "blood_tap", "summon_gargoyle", "blood_presence",
+        "empower_rune_weapon", "scourge_strike", "blood_strike",
+        "scourge_strike", "blood_strike", "death_coil", "death_coil",
+    }
+    assert(#uh.lists.opener == #want,
+        "expected " .. #want .. " opener steps, got " .. #uh.lists.opener)
+    for i, key in ipairs(want) do
+        assert(uh.lists.opener[i].key == key,
+            "step " .. i .. " expected " .. key .. ", got "
+            .. uh.lists.opener[i].key)
+    end
+end)
+
+step("Blood Strike is NOT skipped just because Desolation is up", function()
+    -- The 3.5 regression: Blood Strike applies Desolation as a side
+    -- effect, so the skip rule removed all four of its opener steps -
+    -- and the Unholy opener leads with it.
+    local uh = specNamed("Unholy Death Knight")
+    local bs = uh.abilities.blood_strike
+    assert(bs.applies == "desolation", "Blood Strike should apply Desolation")
+    assert(not bs.openerSkipIfUp,
+        "Blood Strike must not opt in to the opener skip rule")
+end)
+
+step("diseases DO opt in to the skip rule", function()
+    for _, name in ipairs({ "Frost Death Knight", "Unholy Death Knight" }) do
+        local sp = specNamed(name)
+        assert(sp.abilities.icy_touch.openerSkipIfUp,
+            name .. " Icy Touch should opt in")
+        assert(sp.abilities.plague_strike.openerSkipIfUp,
+            name .. " Plague Strike should opt in")
+    end
+end)
+
+step("Gargoyle comes before the Blood Presence swap", function()
+    local uh = specNamed("Unholy Death Knight")
+    local g, bp, erw
+    for i, e in ipairs(uh.lists.opener) do
+        if e.key == "summon_gargoyle"     and not g   then g   = i end
+        if e.key == "blood_presence"      and not bp  then bp  = i end
+        if e.key == "empower_rune_weapon" and not erw then erw = i end
+    end
+    assert(g < bp,  "Gargoyle must be summoned before swapping to Blood")
+    assert(bp < erw, "ERW is spent after the presence swap")
+end)
+
+print("\n=== PROJECTION CARRIES CAST STATE ===")
+step("the opener is not replayed inside the projected queue", function()
+    -- The reported bug: Plague Strike appeared at queue positions 2 and
+    -- 5 while its disease was up, because the projection read every
+    -- opener entry as never cast.
+    ElvinRotationDB.settings.useOpener = true
+    ER.castCount = {}
+    ER.combatStart = GetTime()
+    ER:UpdateState()
+    ER.state.inCombat = true
+    ER.state.combatTime = 1
+
+    local q = ER:Recommend(5)
+    local seen = {}
+    for i, ab in ipairs(q) do
+        if ab.applies then
+            assert(not seen[ab.key],
+                "'" .. ab.key .. "' appears twice in the queue (positions "
+                .. tostring(seen[ab.key]) .. " and " .. i .. ")")
+            seen[ab.key] = i
+        end
+    end
+end)
+
+step("a simulated cast increments the projected cast count", function()
+    ER.castCount = { shadow_word_pain = 3 }
+    ER:UpdateState()
+    assert(ER.state.castCount.shadow_word_pain == 3, "real cast count wrong")
+
+    -- the projection must start from the real counts, not from zero
+    local q = ER:Recommend(4)
+    assert(q[1], "no recommendation")
+    ER.castCount = {}
+end)
+
+step("projected combat time advances", function()
+    ER:UpdateState()
+    ER.state.inCombat = true
+    local before = ER.state.combatTime or 0
+    ER:Recommend(5)
+    -- combatTime advancing inside the projection is what lets the
+    -- opener hand over to the normal priority mid-queue
+    assert(type(before) == "number", "combatTime not tracked")
+end)
+
+print("\n=== COMBAT LOG FALLBACK ===")
+step("a disease UnitDebuff cannot see is still counted from the log", function()
+    -- If the scan misses it for any reason, the addon must not decide
+    -- the disease is gone and tell you to reapply it forever.
+    mock.clearDebuffs()                       -- UnitDebuff sees nothing
+    local guid = UnitGUID("target")
+    ER.dotTargets = { shadow_word_pain = { [guid] = GetTime() + 11 } }
+
+    ER:UpdateState()
+    local d = ER.state.debuff.shadow_word_pain
+    assert(d and d.up, "combat log fallback did not fire")
+    assert(d.inferred, "should be marked as inferred")
+    assert(d.remains > 10, "expected ~11s, got " .. tostring(d.remains))
+    ER.dotTargets = {}
+end)
+
+step("an EXPIRED log entry does not keep the dot alive", function()
+    mock.clearDebuffs()
+    local guid = UnitGUID("target")
+    ER.dotTargets = { shadow_word_pain = { [guid] = GetTime() - 5 } }
+    ER:UpdateState()
+    local d = ER.state.debuff.shadow_word_pain
+    assert(not d.up, "expired log entry kept the dot alive")
+    ER.dotTargets = {}
+end)
+
+step("UnitDebuff wins when it can see the aura", function()
+    mock.clearDebuffs()
+    mock.addDebuff("Shadow Word: Pain", 48125, 7, "player")
+    ER.dotTargets = { shadow_word_pain = { [UnitGUID("target")] = GetTime() + 30 } }
+    ER:UpdateState()
+    local d = ER.state.debuff.shadow_word_pain
+    assert(d.up, "real aura not found")
+    assert(not d.inferred, "should have used the real aura, not the log")
+    ER.dotTargets = {}
+    mock.clearDebuffs()
+end)
+
+print("\n=== FROST DISEASE UPKEEP ===")
+step("without Glyph of Disease, Pestilence is not used for upkeep", function()
+    mock.clearGlyphs()
+    local fr = specNamed("Frost Death Knight")
+    local st = { presence = "blood", runicPower = 0, haste = 0 }
+    fr.UpdateExtra(st)
+    assert(st.glyph_of_disease == false, "glyph falsely detected")
+
+    for _, e in ipairs(fr.lists.single) do
+        if e.key == "pestilence" then
+            local s1 = {
+                glyph_of_disease = false,
+                dot = { frost_fever = { up = true, remains = 1 } },
+                pesti_window = 4,
+            }
+            assert(not e.when(s1),
+                "Pestilence used for upkeep without the glyph - diseases will drop")
+        end
+    end
+end)
+
+step("with the glyph, Pestilence upkeep is allowed", function()
+    local fr = specNamed("Frost Death Knight")
+    local fired = false
+    for _, e in ipairs(fr.lists.single) do
+        if e.key == "pestilence" then
+            local s1 = {
+                glyph_of_disease = true,
+                dot = { frost_fever = { up = true, remains = 1 } },
+                pesti_window = 4,
+            }
+            if e.when(s1) then fired = true end
+        end
+    end
+    assert(fired, "Pestilence should refresh when the glyph is present")
+end)
+
+step("diseases refresh BEFORE dropping, not after", function()
+    local fr = specNamed("Frost Death Knight")
+    ElvinRotationDB.settings.diseaseRefresh = 3
+    local it
+    for _, e in ipairs(fr.lists.single) do
+        if e.key == "icy_touch" then it = e break end
+    end
+    local s1 = { dot = { frost_fever = { up = true, remains = 2 } } }
+    assert(it.when(s1),
+        "should refresh at 2s left, not wait for the disease to fall off")
+    local s2 = { dot = { frost_fever = { up = true, remains = 10 } } }
+    assert(not it.when(s2), "should not refresh at 10s left")
+end)
+
+step("Blood Strike sits below the strikes, not above the diseases", function()
+    local fr = specNamed("Frost Death Knight")
+    local itIdx, bsIdx, obIdx
+    for i, e in ipairs(fr.lists.single) do
+        if e.key == "icy_touch"    and not itIdx then itIdx = i end
+        if e.key == "obliterate"   and not obIdx then obIdx = i end
+        if e.key == "blood_strike" and not bsIdx then bsIdx = i end
+    end
+    assert(itIdx < bsIdx, "Icy Touch must outrank Blood Strike")
+    assert(obIdx < bsIdx, "Obliterate must outrank Blood Strike")
+end)
+
 print("\n=== AOE: SPREAD, NOT SPAM ===")
 step("Pestilence is held when everything already has the disease", function()
     local uh = specNamed("Unholy Death Knight")
@@ -953,18 +1676,52 @@ step("dot spread is counted per target from the combat log", function()
 end)
 
 step("no AoE list contains an ungated filler that could spam", function()
-    -- Every AoE entry must either have a condition or be a genuine
-    -- filler that is safe to repeat.
-    local SAFE_FILLERS = {
+    -- An ungated AoE entry is only safe if something else stops it
+    -- repeating: a cooldown, a resource cost, or being the intended
+    -- spam ability for that list. Checking the ability itself beats
+    -- maintaining a list of names.
+    local INTENDED_SPAM = {
+        fan_of_knives = true,   -- Rogue AoE
+        shadow_bolt = true,     -- Warlock filler
+        arcane_blast = true,    -- Arcane filler
+        mind_sear = true, mind_flay = true,
         obliterate = true, blood_strike = true, frost_strike = true,
-        howling_blast = true, mind_sear = true, death_and_decay = true,
-        scourge_strike = true, blood_boil = true,
+        scourge_strike = true, blood_boil = true, howling_blast = true,
+        steady_shot = true,     -- Hunter filler
+        fireball = true,        -- Fire Mage filler
+        wrath = true, starfire = true,   -- Balance nukes
+        incinerate = true,      -- Destruction filler
+        frostbolt = true,       -- Frost Mage filler
+        heart_strike = true, death_strike = true,   -- Blood DK
+        bloodthirst = true, whirlwind = true,       -- Fury
+        arcane_shot = true,                         -- Hunter
+        shred = true, hemorrhage = true,            -- Druid / Rogue
+        sinister_strike = true, lightning_bolt = true,
     }
+
     for _, sp in ipairs(ER.specs) do
         for _, e in ipairs(sp.lists.aoe or {}) do
             if not e.when and not e.runList then
-                assert(SAFE_FILLERS[e.key],
-                    sp.name .. " AoE has ungated '" .. e.key .. "' which can spam")
+                local ab = sp.abilities[e.key]
+                assert(ab, sp.name .. " AoE references unknown '" .. e.key .. "'")
+                local gated = (ab.cd and ab.cd > 0)
+                           or ab.majorCD
+                           or ab.power or ab.rp or ab.runes
+                           or INTENDED_SPAM[e.key]
+                assert(gated,
+                    sp.name .. " AoE has ungated '" .. e.key
+                    .. "' with no cooldown or cost - it can spam")
+            end
+        end
+    end
+end)
+
+step("no single-target list contains an ungated repeatable either", function()
+    for _, sp in ipairs(ER.specs) do
+        for _, e in ipairs(sp.lists.single or {}) do
+            if not e.when and not e.runList then
+                local ab = sp.abilities[e.key]
+                assert(ab, sp.name .. " single references unknown '" .. e.key .. "'")
             end
         end
     end

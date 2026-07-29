@@ -52,12 +52,12 @@ spec.abilities = {
     icy_touch = {
         key = "icy_touch", id = 49909, harmful = true, castableMoving = true,
         runes = { frost = 1 }, generatesRP = 10,
-        applies = "frost_fever", appliesFor = 15,
+        applies = "frost_fever", appliesFor = 15, openerSkipIfUp = true,
     },
     plague_strike = {
         key = "plague_strike", id = 49921, harmful = true, castableMoving = true,
         runes = { unholy = 1 }, generatesRP = 10,
-        applies = "blood_plague", appliesFor = 15,
+        applies = "blood_plague", appliesFor = 15, openerSkipIfUp = true,
     },
     obliterate = {
         key = "obliterate", id = 51425, harmful = true, castableMoving = true,
@@ -156,8 +156,16 @@ function spec.ResolveRanks()
 end
 
 --------------------------------------------------------------------
+-- Glyph of Disease. Without it Pestilence SPREADS but does not refresh
+-- the primary target, so a Pestilence-based upkeep plan silently lets
+-- diseases fall off - and then Icy Touch and Plague Strike need runes
+-- Obliterate has already spent, which is what made Blood Strike look
+-- like it was ranked too high.
+local GLYPH_OF_DISEASE = 63334
+
 function spec.UpdateExtra(state)
     state.rp = state.runicPower or 0
+    state.glyph_of_disease = C.HasGlyph(GLYPH_OF_DISEASE)
 
     -- Dual wield detection. Changes nothing in the imported priority
     -- (see NOTES) but Killing Machine procs per swing, so it procs far
@@ -238,7 +246,13 @@ spec.lists.aoe = {
         return s.dot.frost_fever.up
            and (s.activeDot.frost_fever or 0) < (s.activeEnemies or 1)
     end },
-    { key = "howling_blast" },
+    -- Howling Blast is the AoE spell, but it still costs a frost rune
+    -- unless Rime has procced. Gated by the same setting as single
+    -- target so it cannot fire off-proc unless you ask it to.
+    { key = "howling_blast", when = function(s)
+        return s.buff.freezing_fog.up
+            or ER:Setting("howlingBlastRimeOnly") == false
+    end },
     { key = "obliterate" },
     { key = "blood_strike" },
     { key = "frost_strike" },
@@ -246,19 +260,28 @@ spec.lists.aoe = {
 
 spec.lists.single = {
 
-    -- Diseases first: everything else scales off them
+    -- DISEASES.
+    --
+    -- Refresh BEFORE they drop, not after. The old version only acted
+    -- once a disease was already gone, by which point Obliterate has
+    -- usually spent the frost and unholy runes needed to reapply it -
+    -- so the priority fell through to Blood Strike and looked like it
+    -- had the ordering wrong. It did not; it was rune starved.
     { key = "icy_touch", when = function(s)
-        return not s.dot.frost_fever.up
+        return s.dot.frost_fever.remains < (ER:Setting("diseaseRefresh") or 3)
     end },
 
     { key = "plague_strike", when = function(s)
-        return not s.dot.blood_plague.up
+        return s.dot.blood_plague.remains < (ER:Setting("diseaseRefresh") or 3)
     end },
 
-    -- Pestilence refreshes both diseases off one blood rune, which is
-    -- cheaper than recasting Icy Touch + Plague Strike.
+    -- Pestilence only REFRESHES with Glyph of Disease. Without the
+    -- glyph it merely spreads, so using it for upkeep quietly lets both
+    -- diseases expire. Detected, not assumed.
     { key = "pestilence", when = function(s)
-        return s.dot.frost_fever.up and s.dot.frost_fever.remains < 1.5
+        return s.glyph_of_disease
+           and s.dot.frost_fever.up
+           and s.dot.frost_fever.remains < 1.5
     end },
 
     { key = "unbreakable_armor" },
@@ -270,12 +293,17 @@ spec.lists.single = {
     end },
 
     { key = "pestilence", when = function(s)
-        return s.dot.frost_fever.up and s.dot.frost_fever.remains < s.pesti_window
+        return s.glyph_of_disease
+           and s.dot.frost_fever.up
+           and s.dot.frost_fever.remains < s.pesti_window
     end },
 
-    -- Rime proc: free Howling Blast
+    -- Rime proc (Freezing Fog): Howling Blast costs no runes.
+    -- Off-proc it is a frost rune that Obliterate wants, so it is
+    -- never worth casting on single target without the buff.
     { key = "howling_blast", when = function(s)
         return s.buff.freezing_fog.up
+            or ER:Setting("howlingBlastRimeOnly") == false
     end },
 
     -- KILLING MACHINE dump. NOT in the wowsims list - opt in.
@@ -337,6 +365,17 @@ ER:RegisterSpecOptions("DEATHKNIGHT", "frost", "Death Knight", "Frost", {
       tooltip = "Not in the source priority. Killing Machine procs per "
              .. "weapon swing, so dual wield gets far more of them. "
              .. "Try it against your own parses." },
+    { type = "check", key = "howlingBlastRimeOnly",
+      label = "Howling Blast only on a Rime proc",
+      onValue = true, offValue = false,
+      tooltip = "Off-proc, Howling Blast costs a frost rune that "
+             .. "Obliterate wants. Applies to AoE as well." },
+    { type = "slider", key = "diseaseRefresh",
+      label = "Refresh diseases at", min = 1, max = 8, step = 0.5,
+      fmt = "%.1fs",
+      tooltip = "Refresh before they drop, so the runes are still "
+             .. "available. Pestilence is only used for upkeep when "
+             .. "Glyph of Disease is detected." },
     { type = "check", key = "useOpener",
       label = "Use the scripted opener", onValue = true, offValue = false,
       tooltip = "Runs the source opener sequence for the first few "

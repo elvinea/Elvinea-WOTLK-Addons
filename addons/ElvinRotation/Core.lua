@@ -10,7 +10,7 @@ ER.enabled = true
 
 -- Bump this with every release. Printed on load and via /er version so
 -- "did the update actually install?" is a one-second question.
-ER.VERSION = "2.9"
+ER.VERSION = "5.0"
 
 local DB_DEFAULTS = {
     dbVersion = 4,
@@ -32,9 +32,51 @@ local DB_DEFAULTS = {
         shadowfiendMana = 50,     -- cast Shadowfiend at or below this mana %
         useCooldowns = true,
         kmFrostStrike = false,    -- not in the source priority; opt in
+        howlingBlastRimeOnly = true,
         useBoneShield = true,
         keepGhoul = true,
         diseaseRefresh = 3,
+        maintainExpose = false,
+        rogueAoeThreshold = 5,
+        useConsecration = true,
+        useHolyWrath = false,
+        aoeSealOfCommand = false,
+        retManaFloor = 20,
+        judgement = "wisdom",
+        glyphLifeTap = false,
+        useShadowflame = false,
+        lifeTapMana = 30,
+        seedThreshold = 3,
+        arcaneExplosionInMelee = false,
+        arcaneManaFloor = 70,
+        evocationMana = 30,
+        glyphTyphoon = false,
+        maintainFaerieFire = false,
+        heroicStrikeRage = 60,
+        rendRefresh = 3,
+        maintainHuntersMark = true,
+        useExplosiveTrap = false,
+        useMagmaTotem = true,
+        maelstromFiller = 5,
+        shamanRageMana = 25,
+        glyphFrostfire = false,
+        fireMeleeAoe = false,
+        fireEvocationMana = 30,
+        conflagrateFreely = false,
+        destroLifeTapMana = 20,
+        eternalWater = false,
+        frostMeleeAoe = false,
+        frostEvocationMana = 30,
+        manageViper = true,
+        viperMana = 25,
+        useImmolationAura = false,
+        demoLifeTapMana = 20,
+        furyHeroicStrikeRage = 50,
+        useFerociousBite = false, feralFaerieFire = false,
+        combatRupture = false, bladeFlurrySingle = false,
+        subUseBackstab = false,
+        useWaterShield = false, lavaBurstAlways = false,
+        eleEarthShock = false, useThunderstorm = false, eleManaFloor = 20,
         managePresence = true,
         presenceLead = 3,
         useOpener = true,
@@ -690,6 +732,28 @@ SlashCmdList["ELVINROTATION"] = function(msg)
         ER:Print("target mode: |cff55ff55" .. db.aoeMode .. "|r"
             .. "  (detected " .. ER:ActiveEnemies() .. " enemies)")
 
+    elseif cmd == "dots" then
+        if not UnitExists("target") then ER:Print("no target") return end
+        local auras = C.DumpAuras("target")
+        ER:Print("debuffs on target (" .. #auras .. "):")
+        for _, a in ipairs(auras) do
+            ER:Print(string.format("  %-22s id %-6s caster %-8s %.1fs",
+                string.sub(a.name, 1, 22), tostring(a.id),
+                tostring(a.caster), a.remains))
+        end
+        if ER.activeSpec then
+            ER:Print("looking for:")
+            for key, def in pairs(ER.activeSpec.auras) do
+                if def.type == "debuff" then
+                    local d = ER.state.debuff[key]
+                    ER:Print(string.format("  %-22s id %-6s name '%s'  -> %s",
+                        key, tostring(def.id), tostring(def.name),
+                        (d and d.up) and string.format("FOUND %.1fs", d.remains)
+                                      or "|cffff5555NOT FOUND|r"))
+                end
+            end
+        end
+
     elseif cmd == "verify" then
         if not ER.activeSpec then ER:Print("no spec active") return end
         local total = 0
@@ -796,11 +860,15 @@ SlashCmdList["ELVINROTATION"] = function(msg)
             for key, def in pairs(sp.auras) do
                 if def.type == "debuff" then
                     local d = ER.state.debuff[key]
-                    table.insert(dots, string.format("%s=%.1f", key,
-                        d and d.remains or -1))
+                    table.insert(dots, string.format("%s=%.1f%s", key,
+                        d and d.remains or -1,
+                        (d and d.inferred) and "|cffffaa00*|r" or ""))
                 end
             end
-            if #dots > 0 then ER:Print("dots: " .. table.concat(dots, "  ")) end
+            if #dots > 0 then
+                ER:Print("dots: " .. table.concat(dots, "  ")
+                    .. "   |cffffaa00*|r = from combat log, not UnitDebuff")
+            end
             local spread = {}
             for key, def in pairs(sp.auras) do
                 if def.type == "debuff" then
@@ -808,6 +876,23 @@ SlashCmdList["ELVINROTATION"] = function(msg)
                 end
             end
             if #spread > 0 then ER:Print("spread: " .. table.concat(spread, "  ")) end
+            if ER.state.comboPoints then
+                ER:Print("combo points: " .. ER.state.comboPoints
+                    .. "   power: " .. tostring(ER.state.power)
+                    .. "/" .. tostring(ER.state.powerMax))
+            end
+            if ER.state.runes then
+                local r = {}
+                for _, rune in ipairs(ER.state.runes) do
+                    table.insert(r, string.format("%s%s", string.sub(rune.type, 1, 1),
+                        rune.ready and "+" or string.format("%.0f", rune.remains)))
+                end
+                ER:Print("runes: " .. table.concat(r, " ")
+                    .. "   rp " .. tostring(ER.state.runicPower))
+            end
+            if ER.activeSpec.UpdateExtra and ER.state.glyph_of_disease ~= nil then
+                ER:Print("glyph of disease: " .. tostring(ER.state.glyph_of_disease))
+            end
             ER:Print("pet: " .. tostring(ER.state.pet)
                 .. "   presence: " .. tostring(ER.state.presenceName)
                 .. "   enemies: " .. tostring(ER.state.activeEnemies))
@@ -822,6 +907,12 @@ SlashCmdList["ELVINROTATION"] = function(msg)
                 (#buffs > 0 and table.concat(buffs, ", ") or "(none)"))
         end
 
+        ER:Print(string.format("combat %.0fs   opener %s",
+            ER.state.combatTime or -1,
+            (ER.state.inCombat
+             and (ER.state.combatTime or 0) < (ER:Setting("openerWindow") or 40)
+             and ER:Setting("useOpener") ~= false) and "|cff55ff55ACTIVE|r" or "off"))
+
         local q = {}
         for i, ab in ipairs(ER.queue or {}) do table.insert(q, i .. "." .. ab.name) end
         ER:Print(string.format("queue: asked for %d, engine returned %d",
@@ -830,6 +921,6 @@ SlashCmdList["ELVINROTATION"] = function(msg)
         if ER.lastError then ER:Print("|cffff5555last error:|r " .. ER.lastError) end
 
     else
-        ER:Print("version | spec | verify | options | cd | aoe <auto|single|aoe> | keys | toggle | debug | lock | keybind | bars [spell] | queue <1-5> | size <n> | mb <auto|always|never> | sf <0-100> | state | reset")
+        ER:Print("version | spec | verify | dots | options | cd | aoe <auto|single|aoe> | keys | toggle | debug | lock | keybind | bars [spell] | queue <1-5> | size <n> | mb <auto|always|never> | sf <0-100> | state | reset")
     end
 end

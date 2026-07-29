@@ -1,6 +1,6 @@
 # ElvinRotation — Spec Coverage
 
-All 21 damage specs in WotLK 3.3.5a, what exists, and what has actually
+All 23 damage specs in WotLK 3.3.5a, what exists, and what has actually
 been proven in game.
 
 **Status** is what the addon contains.
@@ -15,86 +15,129 @@ priority would have to be written from scratch.
 
 ## Death Knight
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Blood (DPS) | Not started | — | Yes — `DeathKnight-BloodPesti`, `DeathKnightBlood-IV` |
-| Frost | **Built** | Partly — keybinds and presence verified, rotation not yet parsed | Yes — `FrostBLPesti`, `FrostUHPesti` |
-| Unholy | **Built** | In progress — opener and AoE corrected from play, more to check | Yes — `Unholy2HSS`, `UnholyDWSS`, `UnholyDNDAOE` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Blood (DPS) | **Built** | Not yet | Good | Yes — `DeathKnight-BloodPesti`, `DeathKnightBlood-IV` |
+| Frost | **Built** | **Tested** | Good | Yes — `FrostBLPesti`, `FrostUHPesti` |
+| Unholy | **Built** | **Tested** | Good | Yes — `Unholy2HSS`, `UnholyDWSS`, `UnholyDNDAOE` |
 
 ## Druid
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Balance | Not started | — | Yes — `DruidBalance` |
-| Feral (Cat) | Not started | — | Yes — `DruidFeral` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Balance | **Built** | Not yet | Good | Yes — `DruidBalance` |
+| Feral (Cat) | **Built** | Not yet | **LOW — see below** | Yes — `DruidFeral` |
 
 ## Hunter
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Beast Mastery | Not started | — | Yes — `HunterBeastMastery` |
-| Marksmanship | Not started | — | Yes — `HunterMarksmanship` |
-| Survival | Not started | — | Yes — `HunterSurvival` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Beast Mastery | **Built** | Not yet | Good | Yes — `HunterBeastMastery` |
+| Marksmanship | **Built** | Not yet | Good | Yes — `HunterMarksmanship` |
+| Survival | **Built** | Not yet | Good | Yes — `HunterSurvival` |
 
 ## Mage
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Arcane | Not started | — | Yes — `MageArcane` |
-| Fire | Not started | — | Yes — `MageFire` |
-| Frost | Not started | — | Yes — `MageFrost` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Arcane | **Built** | Not yet | Good | Yes — `MageArcane` |
+| Fire | **Built** | Not yet | Good | Yes — `MageFire` |
+| Frost | **Built** | Not yet | Good | Yes — `MageFrost` |
 
 ## Paladin
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Retribution | Not started | — | Yes — `PaladinRetributionLightClub` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Retribution | **Built** | Not yet | Good | Yes — `PaladinRetributionLightClub` |
 
 ## Priest
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Shadow | **Built** | Partly — used in game, Mind Blast behaviour corrected from play | Yes — `PriestShadow` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Shadow | **Built** | **Tested** | Good | Yes — `PriestShadow` |
 
 ## Rogue
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Assassination | Not started | — | Yes — `RogueAssassination` |
-| Combat | Not started | — | **No** — would need writing from scratch |
-| Subtlety | Not started | — | **No** — would need writing from scratch |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Assassination | **Built** | Not yet | Good | Yes — `RogueAssassination` |
+| Combat | **Built** | Not yet | **Medium — reconstructed** | **No source** |
+| Subtlety | **Built** | Not yet | **LOWEST — reconstructed** | **No source** |
 
 ## Shaman
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Elemental | Not started | — | **No** — would need writing from scratch |
-| Enhancement | Not started | — | Yes — `ShamanEnhancement` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Elemental | **Built** | Not yet | **Medium — reconstructed** | **No source** |
+| Enhancement | **Built** | Not yet | Good | Yes — `ShamanEnhancement` |
 
 ## Warlock
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Affliction | Not started | — | Yes — `WarlockAffliction` |
-| Demonology | Not started | — | Yes — `WarlockDemonology` |
-| Destruction | Not started | — | Yes — `WarlockDestruction` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Affliction | **Built** | Not yet | Good | Yes — `WarlockAffliction` |
+| Demonology | **Built** | Not yet | Good | Yes — `WarlockDemonology` |
+| Destruction | **Built** | Not yet | Good | Yes — `WarlockDestruction` |
 
 ## Warrior
 
-| Spec | Status | Tested | Source APL |
-|---|---|---|---|
-| Arms | Not started | — | Yes — `WarriorArms` |
-| Fury | Not started | — | Yes — `WarriorFury` |
+| Spec | Status | Tested | Confidence | Source APL |
+|---|---|---|---|---|
+| Arms | **Built** | Not yet | Medium — no stance dancing | Yes — `WarriorArms` |
+| Fury | **Built** | Not yet | Medium — no stance dancing | Yes — `WarriorFury` |
 
 ---
 
 ## Totals
 
-- **Built:** 3 of 21
-- **Tested in game:** 0 fully, 3 partly
-- **Source APL available:** 18 of 21
+- **Built:** 23 of 23 — complete
+- **Remaining:** 0
+- **Tested in game:** 3 — Shadow Priest, Frost DK, Unholy DK
+- **Source APL available:** 20 of 23
 
-Missing source lists: Rogue Combat, Rogue Subtlety, Shaman Elemental.
+(An earlier version of this file said 21 specs. That was an arithmetic
+error on my part; the correct total is 23.)
+
+Built but untested: everything except Shadow Priest, Frost DK and Unholy DK —
+thirteen specs that have never been run in game.
+
+**All 23 damage specs are built.** Twenty of the twenty-three have never been
+run in game.
+
+### Confidence
+
+**Good (19)** — translated from a source APL, with omissions documented in
+each file.
+
+**Medium — no stance dancing (2)** — Arms and Fury Warrior. The rotations are
+translated, but stance swapping is deliberately not implemented, and Heroic
+Strike and Cleave are off-GCD queued abilities the addon treats as normal
+recommendations. That last point is the biggest single inaccuracy in either.
+
+**Medium — reconstructed (2)** — Combat Rogue and Elemental Shaman. No source
+APL exists, so these are my reconstruction rather than a translation. Their
+core shapes are well established and uncontroversial (Slice and Dice upkeep
+into Eviscerate; Flame Shock into Lava Burst on cooldown). The debatable
+choices are exposed as settings rather than guessed at silently.
+
+**LOW — Feral Cat** — built, but missing the thing that actually makes Feral
+work. The source runs a live damage-per-energy calculation over attack power,
+crit, armour penetration and boss armour, plus a bespoke scheduler resolving
+Rip against Savage Roar. None of that is implemented. It will be right about
+what to press and wrong about when to clip Rip, when Ferocious Bite beats
+Shred, and every weaving decision.
+
+**LOWEST — Subtlety Rogue** — reconstructed, and the spec I would trust least
+in the whole addon. Subtlety was rarely raided in Wrath, which is why no
+source list exists. Shadow Dance handling in particular is a guess.
+
+Missing source lists: Rogue Combat, Rogue Subtlety, Shaman Elemental. Those
+three would need priorities written from scratch rather than translated.
+
+
+| Rogue Combat | **No** | Write from scratch |
+| Rogue Subtlety | **No** | Write from scratch |
+| Shaman Elemental | **No** | Write from scratch |
 
 ---
 
@@ -135,5 +178,75 @@ wowsims.github.io (2023) and targets **Wrath Classic 3.4.x**, not original
 - **Presence handling** — the source only ever swaps *back* to Blood, and
   assumes you were already in Unholy when Gargoyle came up. Now a real
   two-way swap.
+- **Frost disease upkeep** — the source uses Pestilence for refreshing, which
+  silently requires Glyph of Disease. Without the glyph the diseases simply
+  expire. Now detected rather than assumed.
 
 Treat imported numbers as a starting point, not an authority.
+
+---
+
+## Notes on the two newest specs
+
+**Assassination Rogue** is the first combo-point spec. Energy and combo
+points are handled generically by the engine — a spec declares `powerType`
+and `usesComboPoints` and the costs are enforced for it. Rupture appears only
+as a bleed to enable Hunger for Blood, which is how the source uses it, not
+as a damage finisher. Poisons are assumed applied; nothing reminds you.
+
+**Affliction Warlock** is the closest relative of Shadow Priest — several
+DoTs kept rolling with a nuke filler — with one wrinkle: Haunt buffs every
+other DoT while it is on the target, so refreshing inside the Haunt window
+matters and the priority is built around it. Below 26% health the whole list
+is replaced by a Drain Soul execute. Haunt's travel time is approximated as a
+flat 0.5s because 3.3.5 gives no way to measure it, and Corruption snapshot
+tracking is not implemented.
+
+**Arcane Mage** is the shortest priority in the addon: stack Arcane Blast to
+four, spend with Arcane Missiles when Missile Barrage procs, Arcane Barrage
+instead if you are moving, and keep mana above water. Nearly all the skill is
+in the mana management rather than the button order, so both mana lines — stop
+stacking, and evocate — are sliders.
+
+**Survival Hunter** is the first Hunter spec. Explosive Shot is effectively
+the whole rotation — a short DoT you re-apply the moment the last one stops
+ticking — and everything else fills around it. Shot weaving against the
+auto-shot timer is deliberately not implemented: 3.3.5 exposes the ranged
+swing timer poorly and getting it wrong is worse than ignoring it.
+
+**Enhancement Shaman** is the first spec with a stacking proc that converts a
+cast into an instant. Maelstrom Weapon builds from melee swings, and at five
+stacks Lightning Bolt becomes instant and free. Weapon imbues and the wider
+totem subsystem are omitted — both are upkeep rather than rotation, and
+dropping the wrong totem mid-fight is worse than dropping none.
+
+**Fire Mage** shares the Mage class with Arcane and claims a different talent
+tab, so spec detection picks whichever tree has more points — the same
+mechanism as the two Death Knight specs. One proc to react to: Hot Streak
+makes the next Pyroblast instant, and sitting on it wastes the next crit.
+
+**Balance Druid** is built entirely around Eclipse, in two states the source
+calls fishing and spamming. Fishing means no Eclipse is up, so you cast
+whichever nuke procs the one you want next — and it reads backwards, because
+Wrath procs Lunar Eclipse which buffs Starfire. Each Eclipse has a 30 second
+internal cooldown that 3.3.5 does not expose, so the addon tracks when each
+was last seen up and assumes 30 seconds from there. That will be wrong for
+the first proc after a reload.
+
+**Arms Warrior** is the first rage spec. **Stance dancing is deliberately not
+implemented** — the source runs three lists and swaps into Berserker for
+Recklessness and Bladestorm before returning. That is a real part of good Arms
+play, and doing it badly would be worse than not doing it, so this assumes you
+stay in Battle Stance. Heroic Strike is also imperfect: it is an off-GCD
+queued ability, and the addon treats it as a normal recommendation with a rage
+reserve slider as the crude substitute.
+
+**Retribution Paladin** is the first spec whose rotation is essentially a
+queue of cooldowns rather than a resource loop. The source list threads a
+different fraction of one mana threshold through nearly every line; that is
+collapsed here into a single floor with a slider. Seals are faction split —
+Alliance cast Seal of Vengeance, Horde Seal of Corruption — and both are
+registered so whichever the character knows resolves. Auras and blessings are
+deliberately omitted: they are raid setup, not rotation. Holy Wrath is off by
+default because it is only worth casting against Demons and Undead and 3.3.5
+gives no way to check creature type.
