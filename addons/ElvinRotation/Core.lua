@@ -10,17 +10,18 @@ ER.enabled = true
 
 -- Bump this with every release. Printed on load and via /er version so
 -- "did the update actually install?" is a one-second question.
-ER.VERSION = "5.0"
+ER.VERSION = "6.0"
 
 local DB_DEFAULTS = {
     dbVersion = 4,
     x = 0, y = -150, point = "CENTER", relPoint = "CENTER",
     size = 56, locked = false,
     showKeybind = true, keybindSize = 12, queueSize = 3,
-    showSwipe = true, showGcdText = false,
+    showSwipe = true, showGcdText = false, warnSelfBuffs = true,
     displayMode = "combat",       -- "combat" | "always"
     cooldownsOff = false,
     aoeMode = "auto",         -- auto | single | aoe
+    manualKeys = {},          -- spell name -> key, overrides detection
     collapsed = {}, rolledUp = false, optWidth = 380,
     -- DEFAULT IS "never": the imported flay_over_blast polynomial does
     -- not discriminate at 3.3.5 spellpower levels (see the MIND BLAST
@@ -164,7 +165,7 @@ end
 -- Display: icon 1 is the recommendation, 2..N are the projection.
 -- Later icons are dimmer because they are less certain.
 --------------------------------------------------------------------
-local frame, slots = nil, {}
+local frame, slots, buffWarn, offIcon, offLabel, offTag = nil, {}, nil, nil, nil, nil
 
 local function buildSlot(parent, index, size)
     local s = {}
@@ -342,18 +343,61 @@ function ER:UpdateDisplay(queue)
     if not frame then return end
 
     local db = ElvinRotationDB
+    local missing = self.state.missingSelfBuffs or {}
+    local warnOn = (db.warnSelfBuffs ~= false) and #missing > 0
+
     local alwaysShow = (db.displayMode == "always")
-    local show = queue and queue[1]
-                 and (self.state.inCombat or alwaysShow or self.debugMode)
+    local show = (queue and queue[1]
+                  and (self.state.inCombat or alwaysShow or self.debugMode))
+                 or warnOn
+                 or (self.offGCD and self.state.inCombat)
 
     if not show then frame:Hide() return end
     frame:Show()
 
+    -- off-GCD suggestion: only use the standalone icon when the queue
+    -- is full and there is no spare slot frame for it
+    if offIcon then
+        local off = (offSlot == nil) and self.offGCD or nil
+        if off and off.name and self.state.inCombat then
+            local _, _, icon = GetSpellInfo(off.id)
+            offIcon:SetTexture(icon or "")
+            offIcon:Show()
+            if offTag then offTag:Show() end
+            if offLabel then
+                offLabel:SetText(C.Keybind(off.name) or "")
+                offLabel:Show()
+            end
+        else
+            offIcon:Hide()
+            if offTag then offTag:Hide() end
+            if offLabel then offLabel:Hide() end
+        end
+    end
+
+    if buffWarn then
+        if warnOn then
+            buffWarn:SetText("Missing: " .. table.concat(missing, ", "))
+        else
+            buffWarn:SetText("")
+        end
+    end
+
     local n = math.min(db.queueSize or 3, 5)
+
+    -- The queued off-GCD ability goes in the NEXT slot frame, so it
+    -- appears in the row you are already watching. Two attempts at a
+    -- separate icon off to one side were simply never noticed.
+    local offAb = self.offGCD
+    local offSlot = nil
+    if offAb and offAb.name and self.state.inCombat and n < 5 then
+        offSlot = n + 1
+    end
 
     for i = 1, 5 do
         local s = slots[i]
         local ab = (i <= n) and queue[i] or nil
+        if i == offSlot then ab = offAb end
 
         if ab then
             local _, _, icon = GetSpellInfo(ab.id)
@@ -364,6 +408,14 @@ function ER:UpdateDisplay(queue)
                 s.key:SetText(C.Keybind(ab.name) or "")
             else
                 s.key:SetText("")
+            end
+
+            -- tint the queued off-GCD entry so it reads as "press this
+            -- as well" rather than "press this next"
+            if i == offSlot then
+                s.icon:SetVertexColor(0.65, 0.9, 1)
+            else
+                s.icon:SetVertexColor(1, 1, 1)
             end
 
             if s.cd then
@@ -565,7 +617,8 @@ for _, e in ipairs({ "ADDON_LOADED", "PLAYER_ENTERING_WORLD",
                      "LEARNED_SPELL_IN_TAB", "PLAYER_REGEN_ENABLED",
                      "PLAYER_REGEN_DISABLED",
                      "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED",
-                     "ACTIONBAR_PAGE_CHANGED" }) do
+                     "ACTIONBAR_PAGE_CHANGED", "UPDATE_BONUS_ACTIONBAR",
+                     "UPDATE_SHAPESHIFT_FORM" }) do
     ev:RegisterEvent(e)
 end
 
@@ -627,7 +680,13 @@ ev:SetScript("OnEvent", function(self, event, arg1)
         C_Timer.After(1, function() ER:DetectSpec() end)
 
     elseif event == "UPDATE_BINDINGS" or event == "ACTIONBAR_SLOT_CHANGED"
-        or event == "ACTIONBAR_PAGE_CHANGED" then
+        or event == "ACTIONBAR_PAGE_CHANGED"
+        or event == "UPDATE_BONUS_ACTIONBAR"
+        or event == "UPDATE_SHAPESHIFT_FORM" then
+        -- Bar addons page by stance. A warrior in Berserker Stance is
+        -- looking at a completely different set of action slots than
+        -- one in Battle Stance, so the keybind map has to be rebuilt
+        -- whenever the form changes or the whole thing goes stale.
         C.InvalidateKeybinds()
 
     elseif event == "PLAYER_REGEN_DISABLED" then
@@ -810,6 +869,10 @@ SlashCmdList["ELVINROTATION"] = function(msg)
                  (#bars > 0 and table.concat(bars, ", ") or "|cffff5555NONE|r"))
         ER:Print("slots with a readable keybind: " .. slots .. "  (" .. method .. ")")
         local vis, total = C.VisibilityStats()
+        local page, base, bonus = C.CurrentActionPage()
+        ER:Print(string.format(
+            "action page %d  (bar page %d, bonus offset %d)  -> bar 1 shows slots %d-%d",
+            page, base, bonus, (page - 1) * 12 + 1, page * 12))
         ER:Print("buttons holding a slot: " .. total .. ", of which visible: " ..
                  (vis == 0 and "|cffff5555" or "|cff55ff55") .. vis .. "|r")
         ER:Print("showKeybind setting: " .. tostring(db.showKeybind))
@@ -823,6 +886,51 @@ SlashCmdList["ELVINROTATION"] = function(msg)
                         tostring(C.Keybind(ab.name))))
                 end
             end
+        end
+
+    elseif cmd == "setkey" then
+        -- /er setkey <spell name> = <key>
+        -- "(.+)" required at least one character after the =, so the
+        -- documented way to CLEAR a key just printed the usage text.
+        local spell, key = string.match(arg or "", "^(.-)%s*=%s*(.*)$")
+
+        if not spell or spell == "" then
+            local set = {}
+            for name, k in pairs(db.manualKeys or {}) do
+                table.insert(set, name .. " = " .. k)
+            end
+            table.sort(set)
+            ER:Print("usage: /er setkey <spell name> = <key>")
+            ER:Print("   eg: /er setkey bloodthirst = s3")
+            ER:Print("       /er setkey bloodthirst =        (clears it)")
+            if #set > 0 then
+                ER:Print("currently set:")
+                for _, line in ipairs(set) do ER:Print("  " .. line) end
+            else
+                ER:Print("nothing set manually")
+            end
+            return
+        end
+
+        -- match the spell loosely against the active spec
+        local target
+        for _, ab in pairs(ER.activeSpec and ER.activeSpec.abilities or {}) do
+            if ab.name and string.find(string.lower(ab.name), spell, 1, true) then
+                target = ab.name break
+            end
+        end
+        if not target then
+            ER:Print("no spell in this spec matching '" .. spell .. "'")
+            return
+        end
+
+        db.manualKeys = db.manualKeys or {}
+        if key == "" or key == "clear" or key == "nil" then
+            db.manualKeys[target] = nil
+            ER:Print(target .. ": manual key cleared")
+        else
+            db.manualKeys[target] = key
+            ER:Print(target .. ": key set to |cff55ff55" .. key .. "|r")
         end
 
     elseif cmd == "keys" then
@@ -893,6 +1001,13 @@ SlashCmdList["ELVINROTATION"] = function(msg)
             if ER.activeSpec.UpdateExtra and ER.state.glyph_of_disease ~= nil then
                 ER:Print("glyph of disease: " .. tostring(ER.state.glyph_of_disease))
             end
+            if ER.state.stanceName then
+                ER:Print("stance: " .. tostring(ER.state.stanceName))
+            end
+            local mb = ER.state.missingSelfBuffs or {}
+            ER:Print("missing self buffs: " ..
+                (#mb > 0 and ("|cffff5555" .. table.concat(mb, ", ") .. "|r")
+                          or "|cff55ff55none|r"))
             ER:Print("pet: " .. tostring(ER.state.pet)
                 .. "   presence: " .. tostring(ER.state.presenceName)
                 .. "   enemies: " .. tostring(ER.state.activeEnemies))
@@ -913,6 +1028,11 @@ SlashCmdList["ELVINROTATION"] = function(msg)
              and (ER.state.combatTime or 0) < (ER:Setting("openerWindow") or 40)
              and ER:Setting("useOpener") ~= false) and "|cff55ff55ACTIVE|r" or "off"))
 
+        ER:Print("off-GCD queued: " ..
+            (ER.offGCD and ("|cff55ff55" .. tostring(ER.offGCD.name) .. "|r")
+                        or "|cffaaaaaanone|r")
+            .. "   (shown on the small icon LEFT of the queue)")
+
         local q = {}
         for i, ab in ipairs(ER.queue or {}) do table.insert(q, i .. "." .. ab.name) end
         ER:Print(string.format("queue: asked for %d, engine returned %d",
@@ -921,6 +1041,6 @@ SlashCmdList["ELVINROTATION"] = function(msg)
         if ER.lastError then ER:Print("|cffff5555last error:|r " .. ER.lastError) end
 
     else
-        ER:Print("version | spec | verify | dots | options | cd | aoe <auto|single|aoe> | keys | toggle | debug | lock | keybind | bars [spell] | queue <1-5> | size <n> | mb <auto|always|never> | sf <0-100> | state | reset")
+        ER:Print("version | spec | verify | dots | setkey | options | cd | aoe <auto|single|aoe> | keys | toggle | debug | lock | keybind | bars [spell] | queue <1-5> | size <n> | mb <auto|always|never> | sf <0-100> | state | reset")
     end
 end

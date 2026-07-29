@@ -227,6 +227,7 @@ for _, e in ipairs({
     { name = "Bloodthirst",            id = 23881 },
     { name = "Whirlwind",              id = 1680  },
     { name = "Death Wish",             id = 12292 },
+    { name = "Victory Rush",           id = 34428 },
     -- Feral
     { name = "Shred",                  id = 48572 },
     { name = "Mangle (Cat)",           id = 48566 },
@@ -407,12 +408,22 @@ function UnitClass(u) return "Priest", player.class end
 function UnitMana(u) return player.mana end
 function UnitManaMax(u) return player.manaMax end
 function UnitAffectingCombat(u) return player.combat end
+local actionPage, bonusOffset = 1, 0
+function GetActionBarPage() return actionPage end
+function GetBonusBarOffset() return bonusOffset end
+function M.setActionPage(p, bonus)
+    actionPage, bonusOffset = p or 1, bonus or 0
+end
+
 local shapeform = 0
 function GetShapeshiftForm() return shapeform end
+-- The shapeshift bar holds presences for a DK and stances for a
+-- warrior, so the mock needs to be told which it is showing.
+local formNames = { "Blood Presence", "Frost Presence", "Unholy Presence" }
+function M.setFormNames(t) formNames = t end
 function GetShapeshiftFormInfo(i)
-    local names = { "Blood Presence", "Frost Presence", "Unholy Presence" }
-    if not names[i] then return nil end
-    return "icon", names[i], (i == shapeform), true
+    if not formNames[i] then return nil end
+    return "icon", formNames[i], (i == shapeform), true
 end
 function M.setPresence(i) shapeform = i or 0 end
 
@@ -482,11 +493,39 @@ local bindings = { ACTIONBUTTON1="1", ACTIONBUTTON2="2", ACTIONBUTTON3="3",
                    ACTIONBUTTON4="SHIFT-4", ACTIONBUTTON5="5", ACTIONBUTTON6="CTRL-6" }
 function GetBindingKey(b) return bindings[b] end
 function M.setBinding(b, k) bindings[b] = k end
+function M.clearBindings() for k in pairs(bindings) do bindings[k] = nil end end
 RANGE_INDICATOR = "\226\128\162"
 
 -- Simulate a bar addon (Bartender4-style names) having already drawn
 -- its buttons with HotKey fontstrings. This is what Keybind reads.
 local hotkeys = { "1", "2", "3", "SHIFT-4", "5", "CTRL-6" }
+-- A paged bar: buttons report action = 1..12 and the PAGE lives on
+-- the parent, so the real slot is (page-1)*12 + index.
+-- A paged bar whose buttons also draw an icon, so the slot validation
+-- has something to check against.
+function M.buildPagedBar(prefix, page, keys, withIcons)
+    local realPage = page
+    local parent = { GetAttribute = function(self, k)
+        if k == "actionpage" then return page end
+    end }
+    for i = 1, 12 do
+        local slot = (realPage - 1) * 12 + i
+        local btn = {
+            IsVisible = function() return true end,
+            GetParent = function() return parent end,
+            GetAttribute = function(self, k)
+                if k == "action" then return i end
+            end,
+        }
+        if withIcons then
+            btn.icon = { GetTexture = function() return GetActionTexture(slot) end }
+        end
+        _G[prefix .. i] = btn
+        local txt = keys and keys[i]
+        _G[prefix .. i .. "HotKey"] = { GetText = function() return txt or "" end }
+    end
+end
+
 function M.buildBars(prefix, opts)
     prefix = prefix or "BT4Button"
     opts = opts or {}
@@ -494,7 +533,12 @@ function M.buildBars(prefix, opts)
     local vis  = (opts.visible ~= false)
     local base = opts.slotBase or 0
     for i = 1, 12 do
-        local btn = { action = base + i, IsVisible = function() return vis end }
+        local btn = { IsVisible = function() return vis end }
+        if opts.libStyle then
+            btn._state_action = base + i      -- LibActionButton style
+        else
+            btn.action = base + i
+        end
         _G[prefix .. i] = btn
         local txt = keys[i]
         _G[prefix .. i .. "HotKey"] = { GetText = function() return txt or "" end }

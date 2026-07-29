@@ -82,10 +82,12 @@ spec.abilities = {
     seal_of_vengeance = {
         key = "seal_of_vengeance", id = 31801, castableMoving = true,
         applies = "seal_of_vengeance", appliesTo = "buff", appliesFor = 1800,
+            selfBuff = true,
     },
     seal_of_command = {
         key = "seal_of_command", id = 20375, castableMoving = true,
         applies = "seal_of_command", appliesTo = "buff", appliesFor = 1800,
+            selfBuff = true,
     },
 }
 

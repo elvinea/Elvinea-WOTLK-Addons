@@ -89,6 +89,7 @@ spec.abilities = {
         key = "horn_of_winter", id = 57623, castableMoving = true, cd = 20,
         generatesRP = 10,
         applies = "horn_of_winter", appliesTo = "buff", appliesFor = 120,
+            selfBuff = true,
     },
     mind_freeze = {
         key = "mind_freeze", id = 47528, harmful = true, castableMoving = true,

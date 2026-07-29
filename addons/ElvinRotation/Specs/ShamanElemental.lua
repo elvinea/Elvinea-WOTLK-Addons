@@ -68,10 +68,12 @@ spec.abilities = {
     lightning_shield = {
         key = "lightning_shield", id = 49281, castableMoving = true,
         applies = "lightning_shield", appliesTo = "buff", appliesFor = 600,
+            selfBuff = true,
     },
     water_shield = {
         key = "water_shield", id = 57960, castableMoving = true,
         applies = "water_shield", appliesTo = "buff", appliesFor = 600,
+            selfBuff = true,
     },
     wind_shear = {
         key = "wind_shear", id = 57994, harmful = true, cd = 6,

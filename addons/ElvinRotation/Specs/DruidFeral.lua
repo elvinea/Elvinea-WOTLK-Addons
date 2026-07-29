@@ -91,6 +91,7 @@ spec.abilities = {
     cat_form = {
         key = "cat_form", id = 768, castableMoving = true,
         applies = "cat_form", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
 }
 

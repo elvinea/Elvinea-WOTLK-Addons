@@ -8,6 +8,141 @@ test. That pattern is worth preserving in the record.
 
 ---
 
+## 5.9
+
+- **Paging affects every form and stance spec, not just warriors.** The bonus
+  bar offset maps to a page for all of them:
+
+  | Form / stance | Offset | Page | Slots |
+  |---|---:|---:|---|
+  | none | 0 | 1 | 1-12 |
+  | Warrior Battle, Druid Bear, Rogue Stealth | 1 | 7 | 73-84 |
+  | Warrior Defensive, Druid Aquatic | 2 | 8 | 85-96 |
+  | Warrior Berserker, Druid Cat | 3 | 9 | 97-108 |
+  | Druid Moonkin / Travel | 4 | 10 | 109-120 |
+
+  That explains Balance reporting slots 109-120 and Fury reporting 97-108 —
+  the same bug in two places.
+
+- **The page calculation is now validated before being trusted.** A bar that
+  does NOT page still reports buttons 1-12 while a form is active, and
+  shifting those would file every key against slots the button never shows.
+  The computed slot is checked against the icon the button actually draws,
+  and discarded if they disagree.
+
+## 5.8
+
+- **Page resolution now falls back to Blizzard's own answer.** When a bar
+  addon exposes no `actionpage` attribute, the page is derived from
+  `GetActionBarPage` and `GetBonusBarOffset`. The bonus offset is what makes a
+  warrior's bar 1 show slots 73-120: stance 1 gives page 7, stance 2 page 8,
+  stance 3 page 9 — which is the 97-108 range that never resolved.
+- `/er bars` now prints the live action page, the bar page, the bonus offset
+  and which slot range bar 1 is currently showing, so the arithmetic is
+  checkable rather than assumed.
+
+## 5.7
+
+- **Paged bars now resolve to the real action slot.** On a paged bar the
+  button's `action` attribute is its INDEX (1-12), not the slot it currently
+  shows; the real slot is `(page - 1) * 12 + index`. Every key on such a bar
+  was being filed against slots 1-12. A warrior in Berserker Stance has bar 1
+  on page 9 showing slots 97-108 — which is exactly the range that never
+  resolved.
+- **The key the bar addon draws is now the primary source.** Bindings can come
+  from two places that store them differently: the WoW settings UI writes
+  named bindings (`ACTIONBUTTON3`), ElvUI's `/kb` writes click bindings
+  (`CLICK ElvUI_Bar1Button5:LeftButton`). Querying one name finds some and
+  misses others, which is why it looked random. Whatever the source, the bar
+  addon renders the key you actually press, so that label is now preferred
+  over a binding lookup.
+
+## 5.6
+
+- **`/er setkey ... =` now clears a key.** The pattern required at least one
+  character after the `=`, so the documented way to clear one just printed the
+  usage text. `/er setkey` with no arguments now also lists everything you
+  have set manually.
+- No new keybind detection heuristics. Five versions of those did not solve
+  the Fury slots and each one added surface area. The manual override is
+  deterministic and is the recommended route where detection fails.
+
+## 5.5
+
+- **The Rotation panel now follows the spec you are playing.** It picked an
+  arbitrary spec of your class via `pairs()` order, so a Balance druid could
+  open it and be shown Feral's settings with nothing indicating the mismatch.
+  Harmless while every class had one spec; wrong as soon as Druid had two.
+  It also re-selects when you reopen the panel after changing spec.
+- **Victory Rush now requires the Victorious proc.** It only works after you
+  kill something, so on a target dummy — where nothing ever dies — it was
+  being recommended constantly.
+- **Off-GCD abilities have their own indicator.** Heroic Strike and Cleave are
+  queued alongside your next global rather than instead of it, so they no
+  longer displace the recommendation. They appear on a small icon to the left
+  of the queue with their own keybind. This was the biggest known inaccuracy
+  in both Warrior specs.
+
+## 5.4
+
+- **Read LibActionButton bars properly.** ElvUI and Bartender are both built
+  on LibActionButton-1.0, which keeps the live action slot in
+  `_state_action`. The scan only looked at `.action`, so those buttons looked
+  like they held nothing — which is the likely reason slots 97-108 never
+  resolved on Fury despite being on a visible bar.
+- **Added `/er setkey <spell> = <key>`.** A manual override that wins over all
+  detection. After this many rounds of inferring keys from bar addons, being
+  able to just state one is worth more than another heuristic. `/er setkey
+  bloodthirst =` clears it again.
+- **Correction to 5.3:** the stance-paging work did not break anything. The
+  same six abilities failed before and after; only the wording of the failure
+  changed, from "none bound" to "not drawn in this stance", which made it
+  look like a regression.
+
+## 5.3
+
+- **Keybinds now rebuild when your stance changes.** ElvUI pages a warrior's
+  bars by stance — Battle to page 7, Defensive to 8, Berserker to page 9
+  (slots 97-108) — so the slot a button shows changes with the stance, and
+  the cached keybind map went stale. Now invalidated on
+  `UPDATE_SHAPESHIFT_FORM`, `UPDATE_BONUS_ACTIONBAR` and page changes, plus a
+  5 second safety refresh.
+- `/er keys` now says "not drawn in this stance" rather than "no bar draws
+  these slots" for slots above 72, since that is usually what it means.
+
+## 5.2
+
+- **Keybinds in action slots above 72.** Nothing resolved there, because no
+  Blizzard binding header covers bars 7 to 10 and the button-frame scan was
+  the only route. On Fury that meant Bloodthirst, Whirlwind, Recklessness,
+  Bloodrage, Cleave and Sunder Armor all reported "none bound". There is now
+  a slot-to-bar fallback covering all 120 slots via bar addon binding names.
+  This is a heuristic — a warrior's bar 1 changes slots with stance, which
+  can break the mapping — so it only runs after the button frames.
+- `/er keys` now distinguishes "on a bar but nothing bound to it" from "no bar
+  draws these slots at all". Different problems, different fixes.
+
+## 5.1  (first round of test feedback)
+
+- **Warrior stances are stances, not buffs** — the same mistake as DK
+  presences. `UnitBuff` never sees them, so Fury kept telling you to enter
+  Berserker Stance while you were standing in it. Now read from the
+  shapeshift bar.
+- **Self-buff warnings.** A red line under the icons lists any of your own
+  buffs that are not up: armour, shouts, aspects, forms, shields, presences
+  and stances. Works out of combat. Toggleable.
+- **Fury:** Recklessness now comes before Death Wish — it is the shorter
+  buff, so it belongs inside the longer window.
+- **Balance:** Moonfire is arcane and Insect Swarm is nature, so they are now
+  tied to Lunar and Solar respectively rather than both being refreshed
+  whenever they dropped.
+- **Arcane:** a Missile Barrage proc no longer requires four Arcane Blast
+  stacks before being spent. Requiring that let procs expire unused.
+- **Marksmanship:** separate "back to Dragonhawk" threshold, so it no longer
+  flips out of Viper the moment mana crosses the same line it entered on.
+- **Options:** the Rotation dropdowns now mark which class and spec you are
+  actually playing, and the Keybinds section is labelled with the active spec.
+
 ## 5.0
 
 - Added the last four specs: **Feral Druid (Cat)**, **Combat Rogue**,

@@ -72,6 +72,7 @@ spec.abilities = {
     fel_armor = {
         key = "fel_armor", id = 47893, castableMoving = true,
         applies = "fel_armor", appliesTo = "buff", appliesFor = 1800,
+            selfBuff = true,
     },
 }
 

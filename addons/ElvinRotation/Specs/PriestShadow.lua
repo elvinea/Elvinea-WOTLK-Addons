@@ -100,6 +100,7 @@ spec.abilities = {
         key = "inner_fire", id = 48168, cost = 141,
         castTime = 0, castableMoving = true,
         applies = "inner_fire", appliesTo = "buff", appliesFor = 600,
+            selfBuff = true,
     },
     vampiric_embrace = {
         key = "vampiric_embrace", id = 15286, cost = 158,
@@ -110,6 +111,7 @@ spec.abilities = {
         key = "shadowform", id = 15473, cost = 0,
         castTime = 0, castableMoving = true,
         applies = "shadowform", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
     dispersion = {
         key = "dispersion", id = 47585, cost = 0,

@@ -84,6 +84,7 @@ spec.abilities = {
     aspect_of_the_dragonhawk = {
         key = "aspect_of_the_dragonhawk", id = 61847, castableMoving = true,
         applies = "aspect_of_the_dragonhawk", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
 }
 

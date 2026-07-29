@@ -96,11 +96,13 @@ spec.abilities = {
     bone_shield = {
         key = "bone_shield", id = 49222, castableMoving = true, cd = 60,
         applies = "bone_shield", appliesTo = "buff", appliesFor = 300,
+            selfBuff = true,
     },
     horn_of_winter = {
         key = "horn_of_winter", id = 57623, castableMoving = true, cd = 20,
         generatesRP = 10,
         applies = "horn_of_winter", appliesTo = "buff", appliesFor = 120,
+            selfBuff = true,
     },
     mind_freeze = {
         key = "mind_freeze", id = 47528, harmful = true, castableMoving = true,
@@ -109,10 +111,12 @@ spec.abilities = {
     unholy_presence = {
         key = "unholy_presence", id = 48265, castableMoving = true,
         applies = "unholy_presence", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
     blood_presence = {
         key = "blood_presence", id = 48266, castableMoving = true,
         applies = "blood_presence", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
 
     -- MAJOR COOLDOWNS ------------------------------------------------

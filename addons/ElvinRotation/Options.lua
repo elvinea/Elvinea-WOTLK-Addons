@@ -177,7 +177,8 @@ relayout = function()
         sec.header:Show()
 
         local collapsed = isCollapsed(sec.key)
-        sec.text:SetText((collapsed and "+ " or "- ") .. sec.title)
+        local title = sec.dynamicTitle and sec.dynamicTitle() or sec.title
+        sec.text:SetText((collapsed and "+ " or "- ") .. title)
         y = y - HEADER_H
 
         if collapsed then
@@ -213,10 +214,26 @@ function ER:RegisterSpecOptions(class, spec, className, specName, opts, specTabl
                                             spec = specTable }
 end
 
+-- Mark the spec you are actually playing, so the Rotation section is
+-- not silently showing settings for something else.
+local function activeKeys()
+    local sp = ER.activeSpec
+    if not sp then return nil, nil end
+    local data = ER.specOptions[sp.class]
+    if not data then return sp.class, nil end
+    for key, d in pairs(data.specs) do
+        if d.spec == sp then return sp.class, key end
+    end
+    return sp.class, nil
+end
+
 local function classList()
+    local activeClass = activeKeys()
     local out = {}
     for class, data in pairs(ER.specOptions) do
-        table.insert(out, { text = data.name or class, value = class })
+        local label = data.name or class
+        if class == activeClass then label = label .. "  (playing)" end
+        table.insert(out, { text = label, value = class })
     end
     table.sort(out, function(a, b) return a.text < b.text end)
     if #out == 0 then out[1] = { text = "(none loaded)", value = "" } end
@@ -224,11 +241,16 @@ local function classList()
 end
 
 local function specList()
+    local activeClass, activeSpecKey = activeKeys()
     local out = {}
     local data = ER.specOptions[selectedClass]
     if data then
         for spec, d in pairs(data.specs) do
-            table.insert(out, { text = d.name or spec, value = spec })
+            local label = d.name or spec
+            if selectedClass == activeClass and spec == activeSpecKey then
+                label = label .. "  (playing)"
+            end
+            table.insert(out, { text = label, value = spec })
         end
     end
     table.sort(out, function(a, b) return a.text < b.text end)
@@ -423,6 +445,14 @@ local function build()
         function(v) ElvinRotationDB.cooldownsOff = not v end)
     addRow(disp, widgets.cds)
 
+    widgets.selfBuffs = makeCheck("Warn about missing self buffs",
+        "Shows a red line under the icons listing any of your own "
+        .. "buffs that are not up - armour, shouts, aspects, forms, "
+        .. "shields, presences and stances.",
+        function() return ElvinRotationDB.warnSelfBuffs ~= false end,
+        function(v) ElvinRotationDB.warnSelfBuffs = v end)
+    addRow(disp, widgets.selfBuffs)
+
     widgets.swipe = makeCheck("Cooldown swipe on icons",
         "Darkens the icon and sweeps round as it becomes available, "
         .. "exactly like a normal action button.",
@@ -463,11 +493,18 @@ local function build()
     -- Pick the default selection BEFORE building the dropdowns; they
     -- read it during construction.
     do
-        local _, class = UnitClass("player")
-        selectedClass = ER.specOptions[class] and class or (classList()[1] or {}).value
-        local d = ER.specOptions[selectedClass]
-        selectedSpec = nil
-        if d then for spec in pairs(d.specs) do selectedSpec = spec break end end
+        -- Select the spec you are ACTUALLY PLAYING, not an arbitrary
+        -- one of your class. pairs() order decided this before, so a
+        -- Balance druid could open the panel and be shown Feral's
+        -- settings with no indication anything was wrong.
+        local activeClass, activeSpecKey = activeKeys()
+        selectedClass = activeClass or (classList()[1] or {}).value
+        selectedSpec  = activeSpecKey
+
+        if not selectedSpec then
+            local d = ER.specOptions[selectedClass]
+            if d then for spec in pairs(d.specs) do selectedSpec = spec break end end
+        end
     end
 
     rotationSec = addSection("rotation", "Rotation")
@@ -497,6 +534,9 @@ local function build()
 
     ---------------- Keybinds (diagnostic) ----------------
     local keys = addSection("keys", "Keybinds")
+    keys.dynamicTitle = function()
+        return "Keybinds" .. (ER.activeSpec and (" — " .. ER.activeSpec.name) or "")
+    end
     for i = 1, 18 do
         local fs = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         fs:SetJustifyH("LEFT")
@@ -534,6 +574,12 @@ function ER:ToggleOptions()
     if panel:IsShown() then
         panel:Hide()
     else
+        -- Follow a spec change that happened after the panel was built.
+        local activeClass, activeSpecKey = activeKeys()
+        if activeClass and activeSpecKey then
+            selectedClass, selectedSpec = activeClass, activeSpecKey
+            buildSpecOptions()
+        end
         ER:RefreshOptions()
         panel:Show()
     end

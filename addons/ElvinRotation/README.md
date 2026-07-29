@@ -62,6 +62,11 @@ It catches API misuse, wrong spell IDs, keybind resolution and structural
 mistakes in priority lists. It cannot tell you a rotation is wrong — only a
 player can.
 
+## Status
+
+[SPECS.md](SPECS.md) tracks which specs are built and tested.
+[TODO.md](TODO.md) tracks what is still open.
+
 ## History
 
 See [CHANGELOG.md](CHANGELOG.md). Worth reading if you plan to add a spec —

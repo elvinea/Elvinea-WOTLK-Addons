@@ -96,6 +96,7 @@ spec.abilities = {
         key = "horn_of_winter", id = 57623, castableMoving = true, cd = 20,
         generatesRP = 10,
         applies = "horn_of_winter", appliesTo = "buff", appliesFor = 120,
+            selfBuff = true,
     },
     raise_dead = {
         key = "raise_dead", id = 46584, castableMoving = true, cd = 180,
@@ -116,10 +117,12 @@ spec.abilities = {
     blood_presence = {
         key = "blood_presence", id = 48266, castableMoving = true,
         applies = "blood_presence", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
     unholy_presence = {
         key = "unholy_presence", id = 48265, castableMoving = true,
         applies = "unholy_presence", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
 }
 

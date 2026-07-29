@@ -18,6 +18,7 @@ local spec = {
     tab       = 1,             -- Arms tree
     school    = 1,             -- physical
     powerType = 1,             -- SPELL_POWER_RAGE
+    usesStance = true,
     gcdProbe  = 47486,         -- Mortal Strike
 }
 
@@ -31,6 +32,8 @@ spec.auras = {
     recklessness     = { id = 1719,  type = "buff" },
     battle_shout     = { id = 47436, type = "buff" },
     bladestorm       = { id = 46924, type = "buff" },
+
+    victorious   = { id = 32216, type = "buff" },
 
     rend         = { id = 47465, type = "debuff", mine = true, duration = 15 },
     sunder_armor = { id = 7386,  type = "debuff", mine = false, duration = 30 },
@@ -60,10 +63,10 @@ spec.abilities = {
         applies = "bladestorm", appliesTo = "buff", appliesFor = 6,
     },
     heroic_strike = {
-        key = "heroic_strike", id = 47450, harmful = true, power = 15,
+        key = "heroic_strike", offGCD = true, id = 47450, harmful = true, power = 15,
     },
     cleave = {
-        key = "cleave", id = 47520, harmful = true, power = 20,
+        key = "cleave", offGCD = true, id = 47520, harmful = true, power = 20,
     },
     sweeping_strikes = {
         key = "sweeping_strikes", id = 12328, cd = 30, power = 30,
@@ -80,6 +83,7 @@ spec.abilities = {
     battle_shout = {
         key = "battle_shout", id = 47436, castableMoving = true,
         applies = "battle_shout", appliesTo = "buff", appliesFor = 120,
+            selfBuff = true,
     },
     sunder_armor = {
         key = "sunder_armor", id = 7386, harmful = true, power = 15,
@@ -91,10 +95,12 @@ spec.abilities = {
     battle_stance = {
         key = "battle_stance", id = 2457, castableMoving = true,
         applies = "battle_stance", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
     berserker_stance = {
         key = "berserker_stance", id = 2458, castableMoving = true,
         applies = "berserker_stance", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
     pummel = {
         key = "pummel", id = 6552, harmful = true, cd = 10, power = 10,
@@ -150,7 +156,7 @@ spec.lists = {}
 
 spec.lists.precombat = {
     { key = "battle_stance", when = function(s)
-        return not s.buff.battle_stance.up and not s.buff.berserker_stance.up
+        return s.stance ~= "battle" and s.stance ~= "berserker"
     end },
     { key = "battle_shout", when = function(s) return not s.buff.battle_shout.up end },
 }
@@ -184,7 +190,10 @@ spec.lists.single = {
         return s.buff.sudden_death.up and not s.moving
     end },
 
-    { key = "victory_rush" },
+    -- Victory Rush only works after you kill something, signalled by
+    -- the Victorious buff. Without this it was being recommended
+    -- constantly on a target dummy, where nothing ever dies.
+    { key = "victory_rush", when = function(s) return s.buff.victorious.up end },
 
     -- Rage dump. Held back so a Mortal Strike is always affordable.
     { key = "heroic_strike", when = function(s)

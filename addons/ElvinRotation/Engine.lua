@@ -137,12 +137,108 @@ local function evaluate(list, spec, state, depth, virtual)
                     end
                 end
                 if passed and isUsable(ab, state, virtual) then
-                    return ab
+                    -- Off-GCD abilities do not cost a global, so they
+                    -- must not displace the recommendation. Skip them
+                    -- here; findOffGCD picks them up separately.
+                    if not ab.offGCD then
+                        return ab
+                    end
                 end
             end
         end
     end
 
+    return nil
+end
+
+--------------------------------------------------------------------
+-- OFF-GCD PASS
+--
+-- These need their own walk of the list. evaluate() returns the
+-- instant it finds a usable ability, and Heroic Strike sits at the
+-- BOTTOM of the priority - so the moment anything above it was
+-- castable the scan stopped and the off-GCD suggestion was never
+-- reached. It simply never appeared.
+--
+-- This pass ignores everything that costs a global and keeps going.
+--------------------------------------------------------------------
+local function findOffGCD(list, spec, state, depth)
+    depth = depth or 0
+    if depth > 5 then return nil end
+
+    for _, entry in ipairs(list) do
+        if entry.runList then
+            local ok = true
+            if entry.when then
+                local success, result = pcall(entry.when, state)
+                ok = success and result and true or false
+            end
+            if ok then
+                local sub = spec.lists[entry.runList]
+                if sub then
+                    local found = findOffGCD(sub, spec, state, depth + 1)
+                    if found then return found end
+                    if entry.terminal then return nil end
+                end
+            end
+
+        else
+            local ab = spec.abilities[entry.key]
+            if ab and ab.offGCD then
+                local passed = true
+                if entry.when then
+                    local ok, result = pcall(entry.when, state)
+                    passed = ok and result and true or false
+                end
+                if passed and isUsable(ab, state, false) then
+                    return ab
+                end
+            end
+        end
+    end
+    return nil
+end
+
+--------------------------------------------------------------------
+-- Off-GCD pass.
+--
+-- These have to be looked for SEPARATELY. evaluate() returns at the
+-- first usable ability, and Heroic Strike and Cleave sit at the bottom
+-- of their lists - so evaluation stopped at Bloodthirst or Whirlwind
+-- and never reached them. The hook that was meant to catch them could
+-- never fire.
+--------------------------------------------------------------------
+local function findOffGCD(list, spec, state, depth)
+    depth = depth or 0
+    if depth > 5 then return nil end
+
+    for _, entry in ipairs(list) do
+        if entry.runList then
+            local ok = true
+            if entry.when then
+                local success, result = pcall(entry.when, state)
+                ok = success and result and true or false
+            end
+            if ok then
+                local sub = spec.lists[entry.runList]
+                if sub then
+                    local found = findOffGCD(sub, spec, state, depth + 1)
+                    if found then return found end
+                    if entry.terminal then return nil end
+                end
+            end
+        else
+            local ab = spec.abilities[entry.key]
+            if ab and ab.offGCD then
+                local passed = true
+                if entry.when then
+                    local ok, result = pcall(entry.when, state)
+                    passed = ok and result and true or false
+                end
+                if passed and isUsable(ab, state, false) then return ab end
+            end
+        end
+    end
     return nil
 end
 
@@ -343,8 +439,17 @@ function ER:Recommend(count)
     end
 
     local out = {}
+    self.offGCD = nil
+
+    -- Off-GCD suggestion is independent of the queue.
+    self.offGCD = findOffGCD(spec.lists.default, spec, state, 0)
 
     local first = evaluate(spec.lists.default, spec, state, 0, false)
+
+    -- Separate pass, regardless of whether a main recommendation was
+    -- found: a queued ability is still worth pressing while you wait.
+    self.offGCD = findOffGCD(spec.lists.default, spec, state, 0)
+
     if not first then self.queue = out return out end
     out[1] = first
 
@@ -367,6 +472,7 @@ end
 -- Update loop. Throttled: this is the biggest performance lever.
 --------------------------------------------------------------------
 local accum = 0
+local keybindAge = 0
 local UPDATE_INTERVAL = 0.1
 
 local driver = CreateFrame("Frame")
@@ -376,6 +482,17 @@ driver:SetScript("OnUpdate", function(self, elapsed)
     accum = 0
 
     if not ER.enabled or not ER.activeSpec then return end
+
+    -- Safety net: paging can change the slot a button shows without
+    -- firing anything we listen for. Cheap because the result is
+    -- cached; this only marks it stale.
+    keybindAge = keybindAge + UPDATE_INTERVAL
+    if keybindAge >= 5 then
+        keybindAge = 0
+        if ER.Compat and ER.Compat.InvalidateKeybinds then
+            ER.Compat.InvalidateKeybinds()
+        end
+    end
 
     ER:UpdateState()
     ER:UpdateDisplay(ER:Recommend())

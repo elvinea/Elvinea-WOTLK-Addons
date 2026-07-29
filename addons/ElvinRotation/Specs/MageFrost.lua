@@ -82,6 +82,7 @@ spec.abilities = {
     molten_armor = {
         key = "molten_armor", id = 43046, castableMoving = true,
         applies = "molten_armor", appliesTo = "buff", appliesFor = 1800,
+            selfBuff = true,
     },
     counterspell = {
         key = "counterspell", id = 2139, harmful = true, cd = 24,

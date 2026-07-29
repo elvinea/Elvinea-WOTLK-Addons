@@ -18,43 +18,43 @@ priority would have to be written from scratch.
 | Spec | Status | Tested | Confidence | Source APL |
 |---|---|---|---|---|
 | Blood (DPS) | **Built** | Not yet | Good | Yes — `DeathKnight-BloodPesti`, `DeathKnightBlood-IV` |
-| Frost | **Built** | **Tested** | Good | Yes — `FrostBLPesti`, `FrostUHPesti` |
-| Unholy | **Built** | **Tested** | Good | Yes — `Unholy2HSS`, `UnholyDWSS`, `UnholyDNDAOE` |
+| Frost | **Built** | **PASS** — opener needs a macro | Good | Yes — `FrostBLPesti`, `FrostUHPesti` |
+| Unholy | **Built** | **PASS** — opener needs a macro | Good | Yes — `Unholy2HSS`, `UnholyDWSS`, `UnholyDNDAOE` |
 
 ## Druid
 
 | Spec | Status | Tested | Confidence | Source APL |
 |---|---|---|---|---|
-| Balance | **Built** | Not yet | Good | Yes — `DruidBalance` |
-| Feral (Cat) | **Built** | Not yet | **LOW — see below** | Yes — `DruidFeral` |
+| Balance | **Built** | **Fixed in 5.1** — Eclipse dot pairing | Good | Yes — `DruidBalance` |
+| Feral (Cat) | **Built** | **PASS with quirks** | **LOW — see below** | Yes — `DruidFeral` |
 
 ## Hunter
 
 | Spec | Status | Tested | Confidence | Source APL |
 |---|---|---|---|---|
 | Beast Mastery | **Built** | Not yet | Good | Yes — `HunterBeastMastery` |
-| Marksmanship | **Built** | Not yet | Good | Yes — `HunterMarksmanship` |
+| Marksmanship | **Built** | **Fixed in 5.1** — aspect thrashing | Good | Yes — `HunterMarksmanship` |
 | Survival | **Built** | Not yet | Good | Yes — `HunterSurvival` |
 
 ## Mage
 
 | Spec | Status | Tested | Confidence | Source APL |
 |---|---|---|---|---|
-| Arcane | **Built** | Not yet | Good | Yes — `MageArcane` |
-| Fire | **Built** | Not yet | Good | Yes — `MageFire` |
+| Arcane | **Built** | **Fixed in 5.1** — Missile Barrage | Good | Yes — `MageArcane` |
+| Fire | **Built** | **PASS** — low gear, unverified | Good | Yes — `MageFire` |
 | Frost | **Built** | Not yet | Good | Yes — `MageFrost` |
 
 ## Paladin
 
 | Spec | Status | Tested | Confidence | Source APL |
 |---|---|---|---|---|
-| Retribution | **Built** | Not yet | Good | Yes — `PaladinRetributionLightClub` |
+| Retribution | **Built** | **Inconclusive** — casts, damage unverified | Good | Yes — `PaladinRetributionLightClub` |
 
 ## Priest
 
 | Spec | Status | Tested | Confidence | Source APL |
 |---|---|---|---|---|
-| Shadow | **Built** | **Tested** | Good | Yes — `PriestShadow` |
+| Shadow | **Built** | **PASS** | Good | Yes — `PriestShadow` |
 
 ## Rogue
 
@@ -75,8 +75,8 @@ priority would have to be written from scratch.
 
 | Spec | Status | Tested | Confidence | Source APL |
 |---|---|---|---|---|
-| Affliction | **Built** | Not yet | Good | Yes — `WarlockAffliction` |
-| Demonology | **Built** | Not yet | Good | Yes — `WarlockDemonology` |
+| Affliction | **Built** | **OPEN** — ~5k vs ~7k expected | Good | Yes — `WarlockAffliction` |
+| Demonology | **Built** | **OPEN** — ~4k vs ~7k expected | Good | Yes — `WarlockDemonology` |
 | Destruction | **Built** | Not yet | Good | Yes — `WarlockDestruction` |
 
 ## Warrior
@@ -84,7 +84,7 @@ priority would have to be written from scratch.
 | Spec | Status | Tested | Confidence | Source APL |
 |---|---|---|---|---|
 | Arms | **Built** | Not yet | Medium — no stance dancing | Yes — `WarriorArms` |
-| Fury | **Built** | Not yet | Medium — no stance dancing | Yes — `WarriorFury` |
+| Fury | **Built** | **Fixed in 5.5** — Victory Rush, off-GCD | Medium — no stance dancing | Yes — `WarriorFury` |
 
 ---
 
@@ -101,8 +101,30 @@ error on my part; the correct total is 23.)
 Built but untested: everything except Shadow Priest, Frost DK and Unholy DK —
 thirteen specs that have never been run in game.
 
-**All 23 damage specs are built.** Twenty of the twenty-three have never been
-run in game.
+**All 23 damage specs are built.** Twelve have now been run in game.
+
+### Specs affected by bar paging
+
+Any spec with a form or stance pages the action bars, so its keybinds live in
+slots 73-120 rather than 1-12. Worth re-checking `/er keys` on all of these:
+both Warriors, all three Rogues (Stealth), and both Druids. Death Knight
+presences and Priest Shadowform do **not** page.
+
+### Testing progress
+
+| Result | Count | Specs |
+|---|---:|---|
+| **PASS** | 6 | Shadow, Frost DK, Unholy DK, Fire, Feral (quirks), and Fury/Balance/Arcane/Marksmanship after their fixes |
+| **Fixed, awaiting re-test** | 4 | Fury (stance, Victory Rush, off-GCD), Balance (Eclipse dot pairing, keybinds), Arcane (Missile Barrage), Marksmanship (aspect thrashing) |
+| **OPEN** | 4 | Affliction and Demonology, both well below expected damage; Arcane and Fire, possibly gear. See TODO.md |
+| **Inconclusive** | 1 | Retribution — abilities fire, damage not judged |
+| **Not yet tested** | 11 | Blood DK, Arms, Beast Mastery, Survival, Mage Frost, Assassination, Combat, Subtlety, Enhancement, Elemental, Destruction |
+
+Both DK openers are slightly off in play; that is being handled with a macro
+rather than in the addon.
+
+Full detail of every item raised in testing, and what happened to it, is in
+[TODO.md](TODO.md).
 
 ### Confidence
 

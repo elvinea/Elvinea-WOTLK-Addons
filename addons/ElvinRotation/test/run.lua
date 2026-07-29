@@ -1229,6 +1229,209 @@ step("unholy precombat opens in UNHOLY presence", function()
     assert(found, "precombat should set Unholy Presence")
 end)
 
+print("\n=== HIGH ACTION SLOTS ===")
+step("slots above 72 resolve via bar-addon binding names", function()
+    -- Reported on Fury: everything in slots 97-108 came back
+    -- "none bound" because no Blizzard binding header covers them.
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setAction(101, "Bloodrage")
+    -- bar 9 owns slots 97-108, so slot 101 is bar 9 button 5
+    mock.setBinding("ELVUIBAR9BUTTON5", "SHIFT-R")
+    ER.Compat.InvalidateKeybinds()
+
+    local got = ER.Compat.Keybind("Bloodrage")
+    mock.clearActions(); mock.clearBindings()
+    mock.setBinding("ACTIONBUTTON1", "1")
+    ER.Compat.InvalidateKeybinds()
+    assert(got == "sR", "slot 101 unresolved, got " .. tostring(got))
+end)
+
+step("slot to bar/button arithmetic is right", function()
+    -- bar N owns slots (N-1)*12+1 .. N*12
+    local cases = {
+        { slot = 1,   bar = 1,  idx = 1  },
+        { slot = 12,  bar = 1,  idx = 12 },
+        { slot = 73,  bar = 7,  idx = 1  },
+        { slot = 84,  bar = 7,  idx = 12 },
+        { slot = 97,  bar = 9,  idx = 1  },
+        { slot = 108, bar = 9,  idx = 12 },
+        { slot = 120, bar = 10, idx = 12 },
+    }
+    for _, c in ipairs(cases) do
+        local bar = math.floor((c.slot - 1) / 12) + 1
+        local idx = ((c.slot - 1) % 12) + 1
+        assert(bar == c.bar and idx == c.idx,
+            "slot " .. c.slot .. " mapped to bar " .. bar .. " button " .. idx)
+    end
+end)
+
+step("LibActionButton bars are read (_state_action, not .action)", function()
+    -- ElvUI and Bartender build on LibActionButton-1.0, which keeps
+    -- the live slot in _state_action. Reading only .action meant those
+    -- buttons looked like they held nothing.
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setAction(1, "Bloodthirst")
+    mock.buildBars("ElvUI_Bar1Button",
+        { visible = true, libStyle = true, keys = { "s3", "s4" } })
+    ER.Compat.InvalidateKeybinds()
+    local got = ER.Compat.Keybind("Bloodthirst")
+    mock.clearAllBars(); mock.clearActions()
+    ER.Compat.InvalidateKeybinds()
+    assert(got == "s3", "LibActionButton slot not read, got " .. tostring(got))
+end)
+
+step("a manual key overrides detection entirely", function()
+    mock.clearAllBars(); mock.clearAllActions()
+    ER.Compat.InvalidateKeybinds()
+    assert(ER.Compat.Keybind("Bloodthirst") == nil, "baseline should be nil")
+
+    ElvinRotationDB.manualKeys = { ["Bloodthirst"] = "s3" }
+    assert(ER.Compat.Keybind("Bloodthirst") == "s3",
+        "manual key ignored, got " .. tostring(ER.Compat.Keybind("Bloodthirst")))
+    assert(ER.Compat.KeybindDiagnosis("Bloodthirst"):find("manually"),
+        "diagnosis should say it was set manually")
+
+    ElvinRotationDB.manualKeys = {}
+end)
+
+step("a stance change invalidates the keybind cache", function()
+    -- ElvUI pages a warrior's bars by stance, so the slot a button
+    -- shows changes when the stance does. A cached map goes stale.
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setAction(1, "Bloodthirst")
+    mock.buildBars("ElvUI_Bar1Button", { visible = true, keys = { "1", "2" } })
+    ER.Compat.InvalidateKeybinds()
+    assert(ER.Compat.Keybind("Bloodthirst") == "1", "baseline lookup failed")
+
+    -- repage: the same button now shows slot 97
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setAction(97, "Bloodthirst")
+    mock.buildBars("ElvUI_Bar1Button", { visible = true, slotBase = 96,
+                                          keys = { "s1", "s2" } })
+    ER.Compat.InvalidateKeybinds()
+    assert(ER.Compat.Keybind("Bloodthirst") == "s1",
+        "after repaging, expected s1, got " .. tostring(ER.Compat.Keybind("Bloodthirst")))
+
+    mock.clearAllBars(); mock.clearActions()
+    ER.Compat.InvalidateKeybinds()
+end)
+
+step("a PAGED bar resolves to the real action slot", function()
+    -- The Fury case: bar 1 on page 9 shows slots 97-108, but its
+    -- buttons still report action = 1..12. Every key was being filed
+    -- against slots 1-12 instead of the slots actually shown.
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setAction(101, "Bloodrage")          -- page 9, button 5
+    mock.buildPagedBar("ElvUI_Bar1Button", 9,
+        { "s1","s2","s3","s4","s5","s6" })
+    ER.Compat.InvalidateKeybinds()
+
+    local got = ER.Compat.Keybind("Bloodrage")
+    mock.clearAllBars(); mock.clearActions()
+    ER.Compat.InvalidateKeybinds()
+    assert(got == "s5",
+        "paged slot 101 should map to button 5, got " .. tostring(got))
+end)
+
+step("every form and stance offset maps to the right page", function()
+    -- All of these page the bars, so all of them hit the same bug:
+    --   Warrior  Battle 1 / Defensive 2 / Berserker 3
+    --   Druid    Bear 1 / Aquatic 2 / Cat 3 / Moonkin-Travel 4
+    --   Rogue    Stealth 1
+    local page = ER.Compat.CurrentActionPage
+    local cases = {
+        { bonus = 0, page = 1,  first = 1,   last = 12  },
+        { bonus = 1, page = 7,  first = 73,  last = 84  },
+        { bonus = 2, page = 8,  first = 85,  last = 96  },
+        { bonus = 3, page = 9,  first = 97,  last = 108 },
+        { bonus = 4, page = 10, first = 109, last = 120 },
+    }
+    for _, c in ipairs(cases) do
+        mock.setActionPage(1, c.bonus)
+        local p = page()
+        assert(p == c.page,
+            "bonus " .. c.bonus .. " should give page " .. c.page .. ", got " .. p)
+        assert((p - 1) * 12 + 1 == c.first and p * 12 == c.last,
+            "page " .. p .. " should cover slots " .. c.first .. "-" .. c.last)
+    end
+    mock.setActionPage(1, 0)
+end)
+
+step("Balance druid slots 109-120 are reachable (Moonkin, offset 4)", function()
+    -- The reported Balance case: Faerie Fire 109, Insect Swarm 110,
+    -- Wrath 111, Starfall 112, Moonfire 113, Starfire 114.
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setActionPage(1, 4)                 -- Moonkin
+    mock.setAction(111, "Wrath")
+    mock.buildPagedBar("ElvUI_Bar1Button", 10,
+        { "1","2","3","4","5","6" })
+    ER.Compat.InvalidateKeybinds()
+
+    local got = ER.Compat.Keybind("Wrath")
+    mock.clearAllBars(); mock.clearActions(); mock.setActionPage(1, 0)
+    ER.Compat.InvalidateKeybinds()
+    assert(got == "3", "slot 111 is page 10 button 3, got " .. tostring(got))
+end)
+
+step("an UNPAGED bar is not shifted by an active form", function()
+    -- The risk in the fallback: a bar that does not page still reports
+    -- 1-12 while the form offset is non-zero. Shifting it would file
+    -- every key against slots the button never shows.
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setActionPage(1, 3)                 -- a form IS active
+    mock.setAction(2, "Bloodthirst")         -- but this bar shows slot 2
+    mock.buildPagedBar("ElvUI_Bar1Button", 1, { "q","w","e" }, true)
+    ER.Compat.InvalidateKeybinds()
+
+    local got = ER.Compat.Keybind("Bloodthirst")
+    mock.clearAllBars(); mock.clearActions(); mock.setActionPage(1, 0)
+    ER.Compat.InvalidateKeybinds()
+    assert(got == "w",
+        "unpaged bar was wrongly shifted; expected w, got " .. tostring(got))
+end)
+
+step("Blizzard bonus-bar offset resolves the page", function()
+    -- A warrior in Berserker Stance has bonus offset 3, so bar 1 shows
+    -- page 9 = slots 97-108. This is the fallback used when the bar
+    -- addon exposes no actionpage attribute.
+    local page = ER.Compat.CurrentActionPage
+    mock.setActionPage(1, 3)
+    local p = page()
+    assert(p == 9, "bonus offset 3 should give page 9, got " .. tostring(p))
+    assert((p - 1) * 12 + 1 == 97, "page 9 should start at slot 97")
+
+    mock.setActionPage(1, 0)
+    assert(page() == 1, "no bonus bar should give page 1")
+end)
+
+step("an unpaged bar is unaffected", function()
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setAction(3, "Bloodthirst")
+    mock.buildPagedBar("ElvUI_Bar1Button", 1, { "1","2","3","4" })
+    ER.Compat.InvalidateKeybinds()
+
+    local got = ER.Compat.Keybind("Bloodthirst")
+    mock.clearAllBars(); mock.clearActions()
+    ER.Compat.InvalidateKeybinds()
+    assert(got == "3", "page 1 should not be shifted, got " .. tostring(got))
+end)
+
+step("rendered text wins over a stale named binding", function()
+    -- /kb writes click bindings, the WoW settings UI writes named
+    -- ones. The label the bar draws is right for both.
+    mock.clearAllBars(); mock.clearAllActions()
+    mock.setAction(1, "Bloodthirst")
+    mock.buildBars("ElvUI_Bar1Button", { visible = true, keys = { "s7" } })
+    mock.setBinding("ELVUIBAR1BUTTON1", "STALE")
+    ER.Compat.InvalidateKeybinds()
+
+    local got = ER.Compat.Keybind("Bloodthirst")
+    mock.clearAllBars(); mock.clearActions(); mock.clearBindings()
+    mock.setBinding("ACTIONBUTTON1", "1")
+    ER.Compat.InvalidateKeybinds()
+    assert(got == "s7", "expected the drawn label s7, got " .. tostring(got))
+end)
+
 print("\n=== IN-FLIGHT AURAS ===")
 step("every dot ability declares what it applies", function()
     -- The suppression keys off ab.applies, so an ability that puts up
@@ -1727,8 +1930,280 @@ step("no single-target list contains an ungated repeatable either", function()
     end
 end)
 
+print("\n=== WARRIOR STANCES ARE STANCES TOO ===")
+step("no Warrior priority tests a stance as a buff", function()
+    -- Same bug as DK presences: UnitBuff never sees a stance, so the
+    -- check was permanently false and Fury kept telling you to enter
+    -- Berserker Stance while standing in it.
+    for _, name in ipairs({ "Arms Warrior", "Fury Warrior" }) do
+        local sp = specNamed(name)
+        assert(sp.usesStance, name .. " does not declare usesStance")
+    end
+end)
+
+step("stance is read from the shapeshift bar", function()
+    mock.setFormNames({ "Battle Stance", "Defensive Stance", "Berserker Stance" })
+    mock.setPresence(3)
+    assert(ER.Compat.ActiveStance() == "Berserker Stance",
+        "expected Berserker Stance, got " .. tostring(ER.Compat.ActiveStance()))
+    mock.setPresence(1)
+    assert(ER.Compat.ActiveStance() == "Battle Stance",
+        "expected Battle Stance, got " .. tostring(ER.Compat.ActiveStance()))
+    mock.setPresence(0)
+end)
+
+step("Fury opens Recklessness before Death Wish", function()
+    local f = specNamed("Fury Warrior")
+    local r, d
+    for i, e in ipairs(f.lists.single) do
+        if e.key == "recklessness" and not r then r = i end
+        if e.key == "death_wish"   and not d then d = i end
+    end
+    assert(r < d, "Recklessness should come before Death Wish")
+end)
+
+step("Victory Rush requires the Victorious proc", function()
+    -- It was being recommended constantly on a dummy, where nothing
+    -- ever dies and the proc never happens.
+    for _, name in ipairs({ "Arms Warrior", "Fury Warrior" }) do
+        local sp = specNamed(name)
+        local vr
+        for _, e in ipairs(sp.lists.single) do
+            if e.key == "victory_rush" then vr = e end
+        end
+        assert(vr and vr.when, name .. " Victory Rush is ungated")
+        assert(not vr.when({ buff = { victorious = { up = false } } }),
+            name .. " suggested Victory Rush with no proc")
+        assert(vr.when({ buff = { victorious = { up = true } } }),
+            name .. " ignored an active Victorious proc")
+    end
+end)
+
+step("a paged slot resolves via its BUTTON binding, not the slot number", function()
+    -- Moonfire at slot 2 resolved; Wrath at slot 111 did not, despite
+    -- being the same bar. ACTIONBUTTON bindings follow the button, so
+    -- slot 111 on page 10 is button 3 = ACTIONBUTTON3.
+    mock.clearAllBars(); mock.clearAllActions(); mock.clearBindings()
+    mock.setActionPage(1, 4)                       -- Moonkin, page 10
+    mock.setAction(111, "Wrath")
+    mock.setBinding("ACTIONBUTTON3", "SHIFT-W")
+    ER.Compat.InvalidateKeybinds()
+
+    local got = ER.Compat.Keybind("Wrath")
+    mock.setActionPage(1, 0); mock.clearActions(); mock.clearBindings()
+    mock.setBinding("ACTIONBUTTON1", "1")
+    ER.Compat.InvalidateKeybinds()
+    assert(got == "sW",
+        "slot 111 should map to ACTIONBUTTON3, got " .. tostring(got))
+end)
+
+step("the off-GCD suggestion occupies a queue slot frame", function()
+    local real = ER.activeSpec
+    local fury = specNamed("Fury Warrior")
+    ER.activeSpec = fury
+    fury.ResolveRanks()
+
+    mock.setPower(1, 90)
+    ElvinRotationDB.queueSize = 3
+    ER:UpdateState()
+    ER.state.inCombat = true
+    ER.state.rage = 90
+    local q = ER:Recommend(3)
+    ER:UpdateDisplay(q)
+
+    local shown = 0
+    for _, f in ipairs(mock.frames) do
+        if type(rawget(f, "_slotIndex")) == "number" and f:IsShown() then
+            shown = shown + 1
+        end
+    end
+    ER.activeSpec = real
+    mock.setPower(1, 0)
+    assert(shown == 4,
+        "expected 3 queue icons plus 1 off-GCD, got " .. shown)
+end)
+
+step("off-GCD abilities are actually FOUND, not just marked", function()
+    -- The bug: evaluate() returns at the first usable ability, and
+    -- Heroic Strike sits at the bottom of the list, so the off-GCD
+    -- hook inside evaluate could never fire. A separate pass is needed.
+    local real = ER.activeSpec
+    local fury = specNamed("Fury Warrior")
+    ER.activeSpec = fury
+    fury.ResolveRanks()
+
+    mock.setPower(1, 90)          -- plenty of rage
+    ER:UpdateState()
+    ER.state.inCombat = true
+    ER.state.rage = 90
+
+    local q = ER:Recommend(3)
+    assert(q[1], "no main recommendation")
+    for _, ab in ipairs(q) do
+        assert(not ab.offGCD,
+            "off-GCD ability '" .. ab.key .. "' leaked into the main queue")
+    end
+    assert(ER.offGCD, "no off-GCD suggestion produced at 90 rage")
+    assert(ER.offGCD.key == "heroic_strike",
+        "expected Heroic Strike, got " .. tostring(ER.offGCD.key))
+
+    ER.activeSpec = real
+    mock.setPower(1, 0)
+end)
+
+step("no off-GCD suggestion when the rage reserve is not met", function()
+    local real = ER.activeSpec
+    local fury = specNamed("Fury Warrior")
+    ER.activeSpec = fury
+
+    mock.setPower(1, 10)
+    ER:UpdateState()
+    ER.state.inCombat = true
+    ER.state.rage = 10
+    ER:Recommend(3)
+    assert(not ER.offGCD or ER.offGCD.key ~= "heroic_strike",
+        "Heroic Strike suggested at 10 rage")
+
+    ER.activeSpec = real
+    mock.setPower(1, 0)
+end)
+
+step("Heroic Strike and Cleave are marked off-GCD", function()
+    for _, name in ipairs({ "Arms Warrior", "Fury Warrior" }) do
+        local sp = specNamed(name)
+        assert(sp.abilities.heroic_strike.offGCD,
+            name .. " Heroic Strike should be off-GCD")
+        assert(sp.abilities.cleave.offGCD,
+            name .. " Cleave should be off-GCD")
+    end
+end)
+
+step("an off-GCD suggestion is found even when it is LAST in the list", function()
+    -- The bug: evaluate() returns at the first usable ability, and
+    -- Heroic Strike sits at the bottom of the Fury priority. Anything
+    -- castable above it stopped the scan, so the off-GCD indicator
+    -- never appeared at all.
+    local real = ER.activeSpec
+    local fake = {
+        name = "OffGCDTest", class = "WARRIOR", tab = 2,
+        auras = {},
+        abilities = {
+            filler = { key = "filler", id = 23881, name = "Bloodthirst",
+                       harmful = true },
+            queued = { key = "queued", id = 47450, name = "Heroic Strike",
+                       harmful = true, offGCD = true },
+        },
+        lists = {},
+    }
+    fake.lists.single = {
+        { key = "filler" },          -- always usable, always first
+        { key = "queued" },          -- off-GCD, last
+    }
+    fake.lists.aoe = {}
+    fake.lists.default = {
+        { runList = "single", terminal = true, when = function() return true end },
+    }
+    ER.activeSpec = fake
+    ER.state.inCombat = true
+    ER.state.targetExists = true
+
+    local q = ER:Recommend(1)
+    local off = ER.offGCD
+    ER.activeSpec = real
+
+    assert(q[1] and q[1].key == "filler",
+        "the queue should hold the ability that costs a global")
+    assert(off and off.key == "queued",
+        "off-GCD suggestion was not found; got " .. tostring(off and off.key))
+end)
+
+step("off-GCD abilities never occupy the main queue", function()
+    for _, sp in ipairs(ER.specs) do
+        for _, listName in ipairs({ "single", "aoe" }) do
+            for _, e in ipairs(sp.lists[listName] or {}) do
+                local ab = sp.abilities[e.key]
+                -- they may appear in the LIST; the engine filters them
+                -- out of the queue. Just assert the flag is coherent.
+                if ab and ab.offGCD then
+                    assert(ab.name == nil or type(ab.name) == "string",
+                        "bad off-GCD ability " .. e.key)
+                end
+            end
+        end
+    end
+end)
+
+print("\n=== OPTIONS FOLLOW THE ACTIVE SPEC ===")
+step("the Rotation panel selects the spec you are playing", function()
+    -- A Balance druid was being shown Feral's settings, because the
+    -- default came from pairs() order over the class's specs.
+    local data = ER.specOptions.DRUID
+    assert(data and data.specs.balance and data.specs.feral,
+        "Druid should have two specs registered")
+    assert(data.specs.balance.spec and data.specs.feral.spec,
+        "both Druid specs should carry their spec table")
+    assert(data.specs.balance.spec ~= data.specs.feral.spec,
+        "the two Druid specs must be distinct tables")
+end)
+
+print("\n=== SELF BUFF WARNINGS ===")
+step("self buffs are tagged across specs", function()
+    local tagged = 0
+    for _, sp in ipairs(ER.specs) do
+        for _, ab in pairs(sp.abilities) do
+            if ab.selfBuff then tagged = tagged + 1 end
+        end
+    end
+    assert(tagged > 10, "expected many self buffs tagged, found " .. tagged)
+end)
+
+step("a missing self buff is reported", function()
+    ER:UpdateState()
+    assert(type(ER.state.missingSelfBuffs) == "table",
+        "missingSelfBuffs not populated")
+end)
+
+print("\n=== ARCANE MISSILE BARRAGE ===")
+step("Missile Barrage does not require four stacks", function()
+    local m = specNamed("Arcane Mage")
+    local am
+    for _, e in ipairs(m.lists.single) do
+        if e.key == "arcane_missiles" and not am then am = e end
+    end
+    ElvinRotationDB.settings.barrageMinStacks = 1
+    local st = { buff = { missile_barrage = { up = true } },
+                 ab_stacks = 2, ab_capped = false }
+    assert(am.when(st), "a Missile Barrage proc at 2 stacks should be spent")
+end)
+
+print("\n=== BALANCE ECLIPSE DOTS ===")
+step("Moonfire is tied to Lunar, Insect Swarm to Solar", function()
+    local d = specNamed("Balance Druid")
+    local mf, is
+    for _, e in ipairs(d.lists.spam) do
+        if e.key == "moonfire"     and not mf then mf = e end
+        if e.key == "insect_swarm" and not is then is = e end
+    end
+    assert(mf and is, "spam list should handle both dots")
+
+    local lunar = { lunar_up = true, solar_up = false,
+                    dot = { moonfire = { remains = 1 }, insect_swarm = { remains = 1 } },
+                    buff = { eclipse_lunar = { remains = 10 },
+                             eclipse_solar = { remains = 0 } } }
+    assert(mf.when(lunar), "Moonfire should refresh during Lunar")
+    assert(not is.when(lunar), "Insect Swarm should NOT be refreshed during Lunar")
+
+    local solar = { lunar_up = false, solar_up = true,
+                    dot = { moonfire = { remains = 1 }, insect_swarm = { remains = 1 } },
+                    buff = { eclipse_lunar = { remains = 0 },
+                             eclipse_solar = { remains = 10 } } }
+    assert(is.when(solar), "Insect Swarm should refresh during Solar")
+    assert(not mf.when(solar), "Moonfire should NOT be refreshed during Solar")
+end)
+
 print("\n=== PRESENCE IS A STANCE ===")
 step("active presence is read from the shapeshift bar", function()
+    mock.setFormNames({ "Blood Presence", "Frost Presence", "Unholy Presence" })
     mock.setPresence(1)
     assert(ER.Compat.ActivePresence() == "Blood Presence",
         "expected Blood Presence, got " .. tostring(ER.Compat.ActivePresence()))

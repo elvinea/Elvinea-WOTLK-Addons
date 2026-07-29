@@ -87,6 +87,7 @@ spec.abilities = {
     aspect_of_the_dragonhawk = {
         key = "aspect_of_the_dragonhawk", id = 61847, castableMoving = true,
         applies = "aspect_of_the_dragonhawk", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
     aspect_of_the_viper = {
         key = "aspect_of_the_viper", id = 34074, castableMoving = true,
@@ -140,7 +141,8 @@ spec.lists.precombat = {
 spec.lists.single = {
     -- Back to Dragonhawk once mana recovers.
     { key = "aspect_of_the_dragonhawk", when = function(s)
-        return not s.buff.aspect_of_the_dragonhawk.up and (s.manaPct or 0) > 25
+        return not s.buff.aspect_of_the_dragonhawk.up
+           and (s.manaPct or 0) > (ER:Setting("dragonhawkMana") or 60)
     end },
 
     { key = "hunters_mark", when = function(s)
@@ -213,6 +215,12 @@ ER:RegisterSpecOptions("HUNTER", "marksmanship", "Hunter", "Marksmanship", {
     { type = "slider", key = "viperMana",
       label = "Swap to Viper below", min = 5, max = 50, step = 5,
       fmt = "%d%% mana" },
+    { type = "slider", key = "dragonhawkMana",
+      label = "Back to Dragonhawk above", min = 20, max = 95, step = 5,
+      fmt = "%d%% mana",
+      tooltip = "Keep this well above the Viper threshold. With both "
+             .. "near the same number the addon flips back and forth, "
+             .. "which is what made it leave Viper far too early." },
 }, spec)
 
 --[[ NOTES ---------------------------------------------------------

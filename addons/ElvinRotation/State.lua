@@ -271,6 +271,28 @@ function ER:UpdateState()
 
     -- Presences are stances. Expose them as plain booleans so a
     -- priority never has to care which mechanism backs them.
+    if spec.usesStance then
+        local sname = C.ActiveStance()
+        state.stanceName = sname
+        state.stance = sname
+                       and string.lower(string.gsub(sname, "%s*Stance", ""))
+                       or nil
+    end
+
+    -- Self buffs that are missing. A spec tags an ability selfBuff and
+    -- the addon watches the aura it applies, so this needs no per-spec
+    -- code and works out of combat too.
+    state.missingSelfBuffs = {}
+    for key, ab in pairs(spec.abilities) do
+        if ab.selfBuff and ab.applies then
+            local a = state.buff[ab.applies]
+            if not (a and a.up) and ab.name then
+                table.insert(state.missingSelfBuffs, ab.name)
+            end
+        end
+    end
+    table.sort(state.missingSelfBuffs)
+
     if spec.usesPresence then
         local pname = C.ActivePresence()
         state.presenceName = pname

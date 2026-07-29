@@ -87,6 +87,7 @@ spec.abilities = {
     molten_armor = {
         key = "molten_armor", id = 43046, castableMoving = true,
         applies = "molten_armor", appliesTo = "buff", appliesFor = 1800,
+            selfBuff = true,
     },
     counterspell = {
         key = "counterspell", id = 2139, harmful = true, cd = 24,
@@ -148,8 +149,12 @@ spec.lists.single = {
 
     -- At four stacks, spend. Missile Barrage makes Arcane Missiles
     -- instant-ish and much cheaper than another Arcane Blast.
+    -- Missile Barrage: spend it. It does NOT require four Arcane Blast
+    -- stacks - requiring that meant a proc could sit there unused
+    -- while you kept stacking, which is a straight damage loss.
     { key = "arcane_missiles", when = function(s)
-        return s.ab_capped and s.buff.missile_barrage.up
+        return s.buff.missile_barrage.up
+           and s.ab_stacks >= (ER:Setting("barrageMinStacks") or 1)
     end },
 
     -- Moving with four stacks and no proc: Barrage is the only
@@ -204,6 +209,11 @@ ER:RegisterSpecOptions("MAGE", "arcane", "Mage", "Arcane", {
       tooltip = "Only worth it standing in the pack. The addon cannot "
              .. "check your distance to the target, so it is off by "
              .. "default." },
+    { type = "slider", key = "barrageMinStacks",
+      label = "Missile Barrage at", min = 0, max = 4, step = 1,
+      fmt = "%d Arcane Blast stacks",
+      tooltip = "Spend a Missile Barrage proc once you have at least "
+             .. "this many stacks. Set to 0 to always spend it." },
     { type = "slider", key = "arcaneManaFloor",
       label = "Stop stacking below", min = 20, max = 90, step = 5,
       fmt = "%d%% mana",

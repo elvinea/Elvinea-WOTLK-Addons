@@ -66,6 +66,7 @@ spec.abilities = {
     lightning_shield = {
         key = "lightning_shield", id = 49281, castableMoving = true,
         applies = "lightning_shield", appliesTo = "buff", appliesFor = 600,
+            selfBuff = true,
     },
     feral_spirit = {
         key = "feral_spirit", id = 51533, cd = 180, castableMoving = true,

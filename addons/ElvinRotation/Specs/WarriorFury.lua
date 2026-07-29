@@ -18,6 +18,7 @@ local spec = {
     tab       = 2,             -- Fury tree
     school    = 1,
     powerType = 1,             -- rage
+    usesStance = true,
     gcdProbe  = 23881,         -- Bloodthirst
 }
 
@@ -29,6 +30,9 @@ spec.auras = {
     recklessness     = { id = 1719,  type = "buff" },
     battle_shout     = { id = 47436, type = "buff" },
     enrage           = { id = 12880, type = "buff" },
+    victorious       = { id = 32216, type = "buff" },
+
+    victorious   = { id = 32216, type = "buff" },
 
     rend         = { id = 47465, type = "debuff", mine = true, duration = 15 },
     sunder_armor = { id = 7386,  type = "debuff", mine = false, duration = 30 },
@@ -48,10 +52,10 @@ spec.abilities = {
         key = "execute", id = 47471, harmful = true, power = 15,
     },
     heroic_strike = {
-        key = "heroic_strike", id = 47450, harmful = true, power = 15,
+        key = "heroic_strike", offGCD = true, id = 47450, harmful = true, power = 15,
     },
     cleave = {
-        key = "cleave", id = 47520, harmful = true, power = 20,
+        key = "cleave", offGCD = true, id = 47520, harmful = true, power = 20,
     },
     death_wish = {
         key = "death_wish", id = 12292, cd = 180, castableMoving = true, power = 10,
@@ -70,10 +74,12 @@ spec.abilities = {
     battle_shout = {
         key = "battle_shout", id = 47436, castableMoving = true,
         applies = "battle_shout", appliesTo = "buff", appliesFor = 120,
+            selfBuff = true,
     },
     berserker_stance = {
         key = "berserker_stance", id = 2458, castableMoving = true,
         applies = "berserker_stance", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
     sunder_armor = {
         key = "sunder_armor", id = 7386, harmful = true, power = 15,
@@ -123,7 +129,7 @@ spec.lists = {}
 
 spec.lists.precombat = {
     { key = "berserker_stance", when = function(s)
-        return not s.buff.berserker_stance.up
+        return s.stance ~= "berserker"
     end },
     { key = "battle_shout", when = function(s) return not s.buff.battle_shout.up end },
 }
@@ -133,8 +139,10 @@ spec.lists.single = {
         return (s.powerMax or 100) - s.rage > 20
     end },
 
-    { key = "death_wish" },
+    -- Recklessness first: it is the shorter buff, so it wants to sit
+    -- inside the Death Wish window rather than the other way round.
     { key = "recklessness" },
+    { key = "death_wish" },
 
     { key = "bloodthirst" },
     { key = "whirlwind" },
@@ -144,7 +152,10 @@ spec.lists.single = {
 
     { key = "execute", when = function(s) return s.execute_phase end },
 
-    { key = "victory_rush" },
+    -- Victory Rush only works after you kill something, signalled by
+    -- the Victorious buff. Without this it was being recommended
+    -- constantly on a target dummy, where nothing ever dies.
+    { key = "victory_rush", when = function(s) return s.buff.victorious.up end },
 
     -- Rage dump, held back so Bloodthirst is always affordable.
     { key = "heroic_strike", when = function(s)

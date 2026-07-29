@@ -76,6 +76,7 @@ spec.abilities = {
     moonkin_form = {
         key = "moonkin_form", id = 24858, castableMoving = true,
         applies = "moonkin_form", appliesTo = "buff", appliesFor = 3600,
+            selfBuff = true,
     },
 }
 
@@ -155,8 +156,12 @@ spec.lists.fish = {
                 or s.moving)
     end },
 
+    -- Moonfire is arcane, so Lunar Eclipse buffs it. Keep it up while
+    -- Lunar is running, and refresh it when fishing for Lunar so it is
+    -- already ticking when the Eclipse lands.
     { key = "moonfire", when = function(s)
-        return not s.dot.moonfire.up and s.moving
+        return s.dot.moonfire.remains < 3
+           and (s.lunar_up or s.lunar_fish or s.moving)
     end },
 
     { key = "force_of_nature" },
@@ -166,15 +171,17 @@ spec.lists.fish = {
         return ER:Setting("maintainFaerieFire") == true and not s.dot.faerie_fire.up
     end },
 
-    { key = "insect_swarm", when = function(s) return not s.dot.insect_swarm.up end },
+    -- Insect Swarm is nature, so Solar Eclipse buffs it.
+    { key = "insect_swarm", when = function(s)
+        return s.dot.insect_swarm.remains < 3
+           and (s.solar_up or s.solar_fish or not s.lunar_up)
+    end },
 
     { key = "typhoon", when = function(s)
         return s.moving and ER:Setting("glyphTyphoon") == true
     end },
 
-    { key = "moonfire", when = function(s)
-        return s.lunar_fish and s.dot.moonfire.remains < 3
-    end },
+
 
     { key = "wrath",    when = function(s) return s.lunar_fish end },
     { key = "starfire", when = function(s) return s.solar_fish end },
@@ -184,10 +191,15 @@ spec.lists.fish = {
 spec.lists.spam = {
     { key = "starfire", when = function(s) return s.buff.elunes_wrath.up end },
 
-    -- Only re-DoT if the Eclipse has enough left to spare a global.
+    -- Inside an Eclipse, only re-DoT the one that Eclipse buffs, and
+    -- only if there is enough of the window left to be worth a global.
+    { key = "moonfire", when = function(s)
+        return s.lunar_up and s.dot.moonfire.remains < 3
+           and s.buff.eclipse_lunar.remains > 4
+    end },
     { key = "insect_swarm", when = function(s)
-        return not s.dot.insect_swarm.up
-           and (not s.lunar_up or s.buff.eclipse_lunar.remains > 7)
+        return s.solar_up and s.dot.insect_swarm.remains < 3
+           and s.buff.eclipse_solar.remains > 4
     end },
 
     { key = "wrath",    when = function(s) return s.solar_up end },

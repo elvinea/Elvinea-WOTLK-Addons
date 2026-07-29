@@ -214,6 +214,22 @@ end
 -- addon kept suggesting Blood Presence to someone already standing in
 -- it. Read the shapeshift form instead.
 --------------------------------------------------------------------
+-- Warrior stances are stances too, exactly like DK presences: they
+-- live on the shapeshift bar, so UnitBuff never sees them. Reading
+-- them as buffs meant Fury kept telling you to enter Berserker Stance
+-- while you were standing in it.
+function C.ActiveStance()
+    if not GetShapeshiftForm then return nil end
+    local form = GetShapeshiftForm()
+    if not form or form == 0 then return nil end
+    if GetShapeshiftFormInfo then
+        local _, name = GetShapeshiftFormInfo(form)
+        if name then return name, form end
+    end
+    return ({ [1] = "Battle Stance", [2] = "Defensive Stance",
+              [3] = "Berserker Stance" })[form], form
+end
+
 function C.ActivePresence()
     if not GetShapeshiftForm then return nil end
     local form = GetShapeshiftForm()
@@ -504,21 +520,29 @@ local function bindingNamesFor(name)
 end
 
 local function hotkeyOf(btn, name)
-    -- 1. Real bindings first. GetBindingKey is ground truth and gives
-    --    the unabbreviated key ("ALT-="), which we abbreviate
-    --    ourselves. Rendered text is a bar addon's own display string
-    --    and can be lossy.
+    -- 1. THE TEXT THE BAR ADDON DRAWS, first.
+    --
+    --    Bindings can be set from two places that store them
+    --    differently: the WoW settings UI writes named bindings like
+    --    ACTIONBUTTON3, while ElvUI's /kb mode writes click bindings
+    --    like "CLICK ElvUI_Bar1Button5:LeftButton". Asking for one
+    --    name finds some and misses others, which is exactly why this
+    --    looked random.
+    --
+    --    Whatever the source, the bar addon renders the key you
+    --    actually press. That label is the only source that is right
+    --    for both.
+    local hk = (name and _G[name .. "HotKey"]) or btn.HotKey or btn.hotkey
+    local txt = hk and hk.GetText and hk:GetText()
+    if not isJunk(txt) then return txt, "hotkey-text" end
+
+    -- 2. Named and click bindings, for buttons that draw no label.
     if GetBindingKey then
         for _, b in ipairs(bindingNamesFor(name)) do
             local k = GetBindingKey(b)
             if k and k ~= "" then return k, "binding:" .. b end
         end
     end
-
-    -- 2. the fontstring the bar addon draws
-    local hk = (name and _G[name .. "HotKey"]) or btn.HotKey or btn.hotkey
-    local txt = hk and hk.GetText and hk:GetText()
-    if not isJunk(txt) then return txt, "hotkey-text" end
 
     -- 3. scan the button's own regions
     local scanned = hotkeyFromRegions(btn)
@@ -527,13 +551,72 @@ local function hotkeyOf(btn, name)
     return nil
 end
 
-local function slotOf(btn)
-    local slot = btn.action
-    if not slot and btn.GetAttribute then
-        local ok, v = pcall(btn.GetAttribute, btn, "action")
-        if ok then slot = v end
+local function attr(obj, name)
+    if not obj or not obj.GetAttribute then return nil end
+    local ok, v = pcall(obj.GetAttribute, obj, name)
+    if ok then return v end
+    return nil
+end
+
+local function slotOf(btn, name)
+    -- .action is Blizzard's field. LibActionButton keeps it in
+    -- _state_action. Both are checked.
+    local slot = tonumber(btn.action) or tonumber(btn._state_action)
+                 or tonumber(attr(btn, "action"))
+    if not slot then return nil end
+
+    -- PAGED BARS. On a paged bar the "action" attribute is the button's
+    -- INDEX (1-12), not the action slot it currently shows. The real
+    -- slot is (page - 1) * 12 + index.
+    --
+    -- This is why high slots never resolved. A warrior in Berserker
+    -- Stance has bar 1 on page 9, so its buttons show slots 97-108 -
+    -- but they still report action = 1..12, and every key was being
+    -- filed against slots 1-12 instead.
+    if slot >= 1 and slot <= 12 then
+        local page = tonumber(attr(btn, "actionpage"))
+                     or tonumber(attr(btn.GetParent and btn:GetParent(), "actionpage"))
+
+        -- Blizzard's own answer, when the bar addon does not expose an
+        -- actionpage attribute. GetBonusBarOffset is what makes a
+        -- warrior's bar 1 show slots 73-120: stance 1 gives page 7,
+        -- stance 2 page 8, stance 3 page 9.
+        if not page then
+            local base  = (GetActionBarPage and GetActionBarPage()) or 1
+            local bonus = (GetBonusBarOffset and GetBonusBarOffset()) or 0
+            page = (bonus > 0) and (6 + bonus) or base
+        end
+
+        if page and page > 1 then
+            local candidate = (page - 1) * 12 + slot
+
+            -- VALIDATE before trusting it. If a bar does NOT page, its
+            -- buttons still report 1-12 while the form offset is
+            -- non-zero, and shifting them would file every key against
+            -- slots that button never shows. Compare what the button
+            -- draws against what the computed slot holds.
+            local ok = true
+            if GetActionTexture then
+                local icon = btn.icon
+                          or (name and _G[name .. "Icon"])
+                local shown = icon and icon.GetTexture and icon:GetTexture()
+                local want  = GetActionTexture(candidate)
+                if shown and want and shown ~= want then ok = false end
+            end
+
+            if ok then slot = candidate end
+        end
     end
-    return tonumber(slot)
+
+    return slot
+end
+
+-- What page is bar one currently showing? Exposed for diagnostics.
+function C.CurrentActionPage()
+    local base  = (GetActionBarPage and GetActionBarPage()) or 1
+    local bonus = (GetBonusBarOffset and GetBonusBarOffset()) or 0
+    local page  = (bonus > 0) and (6 + bonus) or base
+    return page, base, bonus
 end
 
 local visibleSeen, buttonsSeen = 0, 0
@@ -568,11 +651,68 @@ local BAR_RANGES = {
 
 local function bindingForSlot(slot)
     if not GetBindingKey then return nil end
+
+    -- 1. Blizzard's own binding headers. These only exist for the
+    --    default bars, which is why slots above 72 always came back
+    --    empty here.
     for _, r in ipairs(BAR_RANGES) do
         if slot >= r[1] and slot <= r[2] then
-            return GetBindingKey(string.format(r[3], slot - r[1] + 1))
+            local k = GetBindingKey(string.format(r[3], slot - r[1] + 1))
+            if k then return k end
         end
     end
+
+    -- 2. THE CURRENT PAGE OF BAR ONE.
+    --
+    --    ACTIONBUTTON1-12 are bound to the BUTTON, not the slot. When
+    --    a form pages bar 1 to page 10, button 3 shows slot 111 - and
+    --    the key that presses it is still ACTIONBUTTON3.
+    --
+    --    This is why Moonfire (slot 2) resolved and Wrath (slot 111)
+    --    did not, despite being the same physical bar: I was asking for
+    --    a binding named after the slot instead of the button.
+    local page = C.CurrentActionPage and C.CurrentActionPage()
+    if page then
+        local first = (page - 1) * 12 + 1
+        if slot >= first and slot <= first + 11 then
+            local idx = slot - first + 1
+            for _, fmt in ipairs({ "ACTIONBUTTON%d", "ELVUIBAR1BUTTON%d" }) do
+                local k = GetBindingKey(string.format(fmt, idx))
+                if k then return k end
+            end
+            local k = GetBindingKey("CLICK ElvUI_Bar1Button" .. idx .. ":LeftButton")
+            if k then return k end
+        end
+    end
+
+    -- 3. Bar addons number their own bars, and by default bar N owns
+    --    slots (N-1)*12+1 through N*12. That covers 1-120, including
+    --    bars 7 to 10 which have no Blizzard header at all - the range
+    --    where Bloodthirst, Whirlwind, Recklessness and Bloodrage were
+    --    all reporting "none bound".
+    --
+    --    This is a fallback heuristic: paging (a warrior's bar 1
+    --    changes slots with stance) can break the mapping, so it only
+    --    runs after the button frames have been tried.
+    local bar = math.floor((slot - 1) / 12) + 1
+    local idx = ((slot - 1) % 12) + 1
+
+    for _, fmt in ipairs({ "ELVUIBAR%dBUTTON%d", "BT4BUTTON%dBUTTON%d",
+                           "DOMINOSACTIONBUTTON%d_%d" }) do
+        local ok, name = pcall(string.format, fmt, bar, idx)
+        if ok then
+            local k = GetBindingKey(name)
+            if k then return k end
+        end
+    end
+
+    -- 4. Bartender numbers its buttons 1-120 straight through.
+    local k = GetBindingKey("CLICK BT4Button" .. slot .. ":LeftButton")
+    if k then return k end
+
+    k = GetBindingKey("ACTIONBUTTON" .. slot)
+    if k then return k end
+
     return nil
 end
 
@@ -620,12 +760,15 @@ function C.BuildKeybindMap()
         return base and BLIZZ_FRAME[base] or false
     end
 
+    -- Rendered text from a third-party bar now outranks a binding
+    -- lookup: it is the one source that is correct whether the key was
+    -- set in the WoW settings UI or through /kb.
     local function scoreOf(src, vis)
         local fromBinding = src and string.find(src, "binding", 1, true)
         if isBlizzardFrame(src) then
             return fromBinding and 2 or 1
         end
-        return fromBinding and 4 or 3
+        return fromBinding and 3 or 4
     end
 
     local function record(slot, key, src, vis)
@@ -644,7 +787,7 @@ function C.BuildKeybindMap()
             local name = prefix .. i
             local btn = _G[name]
             if type(btn) == "table" then
-                local slot = slotOf(btn)
+                local slot = slotOf(btn, name)
                 if slot then
                     buttonsSeen = buttonsSeen + 1
                     local vis = isVisible(btn)
@@ -668,7 +811,7 @@ function C.BuildKeybindMap()
     -- though the bar addon was visibly drawing the key.
     for name, obj in pairs(_G) do
         if type(obj) == "table" and type(name) == "string" then
-            local ok, slot = pcall(slotOf, obj)
+            local ok, slot = pcall(slotOf, obj, name)
             if ok and slot then
                 local ok2, key, how = pcall(hotkeyOf, obj, name)
                 if ok2 and key then
@@ -782,6 +925,14 @@ function C.FindActionSlot(spellName)
 end
 
 function C.Keybind(spellName)
+    -- A manual override always wins. After enough rounds of trying to
+    -- infer this from bar addons, being able to just say what the key
+    -- is beats another heuristic.
+    local db = _G.ElvinRotationDB
+    if db and db.manualKeys and spellName and db.manualKeys[spellName] then
+        return db.manualKeys[spellName]
+    end
+
     if keyMapStale then C.BuildKeybindMap() end
 
     -- Every slot holding this spell, then the best of them.
@@ -827,6 +978,10 @@ end
 -- Why did this spell fail? Returns a short reason string.
 function C.KeybindDiagnosis(spellName)
     if not spellName then return "no name" end
+    local db = _G.ElvinRotationDB
+    if db and db.manualKeys and db.manualKeys[spellName] then
+        return "|cff55ff55set manually|r"
+    end
     local slots = C.FindActionSlots(spellName)
     if #slots == 0 then return "not on any bar" end
     if keyMapStale then C.BuildKeybindMap() end
@@ -849,7 +1004,35 @@ function C.KeybindDiagnosis(spellName)
     end
 
     if not best then
-        return "slots " .. table.concat(list, ",") .. " - none bound"
+        -- Distinguish "no button draws this slot" from "the button
+        -- exists but nothing is bound to it" - different fixes.
+        local anyButton = false
+        for _, e in ipairs(slots) do
+            for _, prefix in ipairs(BUTTON_PREFIXES) do
+                for i = 1, 120 do
+                    local btn = _G[prefix .. i]
+                    if type(btn) == "table" and slotOf(btn, name) == e.slot then
+                        anyButton = true break
+                    end
+                end
+                if anyButton then break end
+            end
+            if anyButton then break end
+        end
+        if anyButton then
+            return "slots " .. table.concat(list, ",") .. " - on a bar, no key bound"
+        end
+
+        -- Slots 73-120 are the paged bars. A warrior's bars page by
+        -- stance, so a slot genuinely is not drawn while you are in a
+        -- different stance - and the key for it changes with stance too.
+        local paged = false
+        for _, e in ipairs(slots) do
+            if e.slot > 72 then paged = true end
+        end
+        return "slots " .. table.concat(list, ",")
+            .. (paged and " - |cffffaa00not drawn in this stance|r"
+                       or " - |cffffaa00no bar draws these slots|r")
     end
 
     local label = (bestKind == "spell") and "direct"
@@ -917,7 +1100,7 @@ function C.KeybindTrace(spellName)
         for i = 1, 120 do
             local name = prefix .. i
             local btn = _G[name]
-            if type(btn) == "table" and slotOf(btn) == slot then
+            if type(btn) == "table" and slotOf(btn, name) == slot then
                 local key, how = hotkeyOf(btn, name)
                 table.insert(out, "  " .. name .. " key=" .. tostring(key)
                     .. " via=" .. tostring(how)
