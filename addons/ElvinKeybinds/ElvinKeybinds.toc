@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: ElvinKeybinds
+## Notes: Config window (/ekb) to standardize action bar 1-3 keybinds to 1-=, ALT-1-=, SHIFT-1-= (clears existing action bar binds first, including ElvUI's)
+## Author: elvinea
+## Version: 0.2.2
+## SavedVariables:
+
+ElvinKeybinds.lua
