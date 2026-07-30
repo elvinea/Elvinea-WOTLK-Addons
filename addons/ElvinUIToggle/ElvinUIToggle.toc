@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: ElvinUIToggle
+## Notes: Toggle/hide UI elements (ElvUI bars, chat, Details, ElvinCDs, ElvinRotation, CD Used, PallyPower, VuhDo, unit frames, minimap) via saved templates, with an in-game UI
+## Author: James
+## Version: 0.3
+## SavedVariables: ElvinUIToggleDB
+
+ElvinUIToggle.lua
