@@ -401,8 +401,9 @@ end
 local function loadCooldowns()
   removeWindows()
   windows = {}
-  -- Hidden by user:
-  if (groupType == 'BATTLEGROUND' and not options.showInBG)
+  -- Hidden by user, by another addon (addon.hidden), or by group type:
+  if addon.hidden
+    or (groupType == 'BATTLEGROUND' and not options.showInBG)
     or (groupType == 'RAID' and not options.showInRaid)
     or (groupType == 'PARTY' and not options.showInParty)
     or (groupType == 'SOLO' and not options.showWhenSolo) then
@@ -838,6 +839,16 @@ do
     end
   end
 
+  -- Reset every option to its default AND apply it immediately: this
+  -- re-lays-out the tower (bringing it back on-screen at the default
+  -- position) and refreshes the options panel. Tracked spells are left
+  -- untouched.
+  function addon:resetOptions()
+    addon:defaults()
+    utils.triggerEvent('ResetBars')
+    utils.print('Options reset to defaults.')
+  end
+
   -- Loads addons's options on entering world:
   local function loadOptions()
     options = Elvin_Options
@@ -1146,6 +1157,41 @@ end
 
 
 --------------------------------------------------------------------------------
+--> Public show/hide API.
+--  Other addons (e.g. a UI-toggle addon) can hide/show ElvinCoolDowns:
+--    ElvinCoolDowns:Hide()      -- hide all bars/windows
+--    ElvinCoolDowns:Show()      -- show them again
+--    ElvinCoolDowns:Toggle()    -- flip, returns the new hidden state
+--    ElvinCoolDowns:IsHidden()  -- true if currently hidden by this API
+do
+  function addon:Hide()
+    addon.hidden = true
+    for name in pairs(windows) do
+      local f = _G[name]
+      if f then f:Hide() end
+    end
+    local io = _G['ElvinCoolDowns_IO']
+    if io then io:Hide() end
+  end
+
+  function addon:Show()
+    addon.hidden = false
+    utils.triggerEvent('ResetBars')
+  end
+
+  function addon:Toggle()
+    if addon.hidden then addon:Show() else addon:Hide() end
+    return addon.hidden == true
+  end
+
+  function addon:IsHidden()
+    return addon.hidden == true
+  end
+end
+
+
+
+--------------------------------------------------------------------------------
 --> Slash Command Handler:
 do
   local match = _G.string.match
@@ -1168,6 +1214,20 @@ do
       local status = options.icons and '|cff00ff00ON|r' or '|cffff0000OFF|r'
       utils.print(L['Show Spells Icons'], status)
       utils.triggerEvent('ResetBars')
+    elseif command == 'solo' then
+      options.showWhenSolo = not options.showWhenSolo
+      local status = options.showWhenSolo and '|cff00ff00ON|r' or '|cffff0000OFF|r'
+      utils.print('Show when solo', status)
+      utils.triggerEvent('ResetBars')
+    elseif command == 'hide' then
+      addon:Hide()
+      utils.print('Bars hidden. Use |cff33ff99/ecd show|r to bring them back.')
+    elseif command == 'show' then
+      addon:Show()
+      utils.print('Bars shown.')
+    elseif command == 'toggle' then
+      local hidden = addon:Toggle()
+      utils.print('Bars', hidden and '|cffff0000hidden|r' or '|cff00ff00shown|r')
     elseif command == 'strict' then
       options.strict = not options.strict
       local status = options.strict and '|cff00ff00ON|r' or '|cffff0000OFF|r'
@@ -1232,6 +1292,10 @@ do
       print(L:F(helpString, 'reset logs', L['Resets all spells logs']))
       print(L:F(helpString, 'sync', L['Enables/Disabled addon synchronization']))
       print(L:F(helpString, 'io', 'Open the import/export window for tracked spells'))
+      print(L:F(helpString, 'solo', 'Toggle showing the bars while solo (not in a group)'))
+      print(L:F(helpString, 'hide', 'Hide all bars (also callable by other addons)'))
+      print(L:F(helpString, 'show', 'Show the bars again'))
+      print(L:F(helpString, 'toggle', 'Toggle the bars hidden/shown'))
     elseif command == 'config' or command == 'options' or command == '' then
       addon.Config:toggle()
     end

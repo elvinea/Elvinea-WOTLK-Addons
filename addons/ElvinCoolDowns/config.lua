@@ -534,6 +534,18 @@ do
       EasyMenu(menuItems, menuFrame, 'cursor', 0, 0, 'MENU')
     end
 
+    StaticPopupDialogs['ELVINCDS_CONFIRM_RESET'] = {
+      text         = 'Reset all ElvinCoolDowns options to their defaults?\n(Your tracked spells are kept.)',
+      button1      = YES,
+      button2      = CANCEL,
+      timeout      = 0,
+      whileDead    = 1,
+      hideOnEscape = 1,
+      OnAccept     = function()
+        addon:resetOptions()
+      end
+    }
+
     StaticPopupDialogs['ELVINCDS_CONFIRM_DELETE'] = {
       text         = L['Are you sure you want to delete %s from your custom spells list?'],
       button1      = YES,

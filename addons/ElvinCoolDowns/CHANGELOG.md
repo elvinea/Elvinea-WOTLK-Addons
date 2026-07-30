@@ -24,12 +24,20 @@ This project loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased] — Tower layout, class colours & customisation
 
-## [Unreleased] — Tower layout, class colours & customisation
-
 Base version: `0.4b`.
 
 ### Added
 
+- **Public show/hide API.** Other addons can hide or show the bars:
+  `ElvinCoolDowns:Hide()`, `:Show()`, `:Toggle()` and `:IsHidden()`. Handy for
+  a UI-toggle addon that hides the rest of the interface. Also exposed as slash
+  commands `/ecd hide`, `/ecd show`, `/ecd toggle`.
+- **`/ecd solo` toggle.** Quickly turn "Show when solo" on/off without opening
+  the options panel.
+- **Reset Options button.** The options panel has a **RESET** button that
+  restores all display/layout options to their defaults and applies them
+  immediately (this also snaps the tower back to a visible on-screen position).
+  It asks for confirmation first and leaves your tracked spells untouched.
 - **Locked tower layout.** All spell windows now behave as a single tower:
   dragging moves the whole set together, and they keep their relative
   positions instead of being placed independently.
@@ -65,6 +73,9 @@ Base version: `0.4b`.
 
 ### Changed
 
+- **Plain add-on list title.** The title is now plain `ElvinCoolDowns` (no
+  colour codes) so it sorts next to the other `Elvin*` add-ons in the in-game
+  AddOns list instead of being grouped with the coloured-title add-ons.
 - **Removed the window title row.** The spell-name header is gone; spells are
   now identified by the icon on each bar.
 - **Moving the tower** is now done by holding **Shift** and dragging any bar

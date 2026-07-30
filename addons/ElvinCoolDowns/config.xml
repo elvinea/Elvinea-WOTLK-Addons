@@ -532,13 +532,13 @@
 							<OnValueChanged>ElvinCoolDowns.Config.General:onClick(self)</OnValueChanged>
 						</Scripts>
 					</Slider>
-					<Button name="$parentDefault" inherits="ElvinCoolDowns_ButtonTemplate" text="DEFAULTS">
+					<Button name="$parentDefault" inherits="ElvinCoolDowns_ButtonTemplate" text="RESET">
 						<Size x="65" y="25" />
 						<Anchors>
 							<Anchor point="TOPRIGHT" relativeTo="$parent_spacing" relativePoint="BOTTOMRIGHT" x="0" y="-15" />
 						</Anchors>
 						<Scripts>
-							<OnClick>ElvinCoolDowns:defaults()</OnClick>
+							<OnClick>StaticPopup_Show("ELVINCDS_CONFIRM_RESET")</OnClick>
 						</Scripts>
 					</Button>
 					<EditBox name="$parent_requestText" inherits="ElvinCoolDowns_EditBoxTemplate" letters="255">
