@@ -10,7 +10,7 @@ ER.enabled = true
 
 -- Bump this with every release. Printed on load and via /er version so
 -- "did the update actually install?" is a one-second question.
-ER.VERSION = "6.0"
+ER.VERSION = "6.3"
 
 local DB_DEFAULTS = {
     dbVersion = 4,
@@ -99,6 +99,97 @@ function ER:Print(msg)
 end
 
 function ER:RegisterSpec(spec) table.insert(self.specs, spec) end
+
+--------------------------------------------------------------------
+-- PUBLIC API
+--
+-- For other addons. Nothing here touches saved settings: an external
+-- hide is a runtime request, so a boss mod that hides the display
+-- during a cutscene does not silently turn it off for good.
+--
+-- Hides are tracked BY SOURCE, so two addons can both ask for a hide
+-- and neither un-hides the other by releasing first. The display stays
+-- hidden while any source still holds a request.
+--
+--   ElvinRotation:HideDisplay("MyAddon")
+--   ElvinRotation:ShowDisplay("MyAddon")
+--   ElvinRotation:IsDisplayHidden()          -> boolean
+--   ElvinRotation:GetDisplayFrame()          -> the frame, or nil
+--   ElvinRotation:RegisterCallback(ev, fn)   -- "hidden" | "shown"
+--------------------------------------------------------------------
+ER.hiddenBy = ER.hiddenBy or {}
+ER.callbacks = ER.callbacks or {}
+
+function ER:FireCallback(event, ...)
+    for _, entry in ipairs(self.callbacks) do
+        if entry.event == event then
+            local ok, err = pcall(entry.fn, ...)
+            if not ok then
+                self:Print("|cffff5555callback error|r (" .. tostring(entry.owner)
+                           .. "): " .. tostring(err))
+            end
+        end
+    end
+end
+
+-- ev is "hidden" or "shown". owner is optional, used only in errors.
+function ER:RegisterCallback(event, fn, owner)
+    if type(fn) ~= "function" then return false end
+    table.insert(self.callbacks, { event = event, fn = fn, owner = owner })
+    return true
+end
+
+function ER:IsDisplayHidden()
+    for _ in pairs(self.hiddenBy) do return true end
+    return false
+end
+
+function ER:HideDisplay(source)
+    source = source or "external"
+    local wasHidden = self:IsDisplayHidden()
+    self.hiddenBy[source] = true
+    if not wasHidden then
+        local f = self:GetDisplayFrame()
+        if f then f:Hide() end
+        self:FireCallback("hidden", source)
+    end
+    return true
+end
+
+function ER:ShowDisplay(source)
+    source = source or "external"
+    if not self.hiddenBy[source] then return false end
+    self.hiddenBy[source] = nil
+    if not self:IsDisplayHidden() then
+        self:FireCallback("shown", source)
+    end
+    return true
+end
+
+-- Convenience for the simplest possible integration.
+function ER:SetDisplayHidden(hidden, source)
+    if hidden then return self:HideDisplay(source) end
+    return self:ShowDisplay(source)
+end
+
+-- Flip YOUR OWN request. Deliberately scoped to the caller's source:
+-- toggling must not release a hide some other addon is holding, or
+-- two addons sharing the display would fight over it.
+function ER:ToggleDisplay(source)
+    source = source or "external"
+    if self.hiddenBy[source] then
+        return self:ShowDisplay(source), false
+    end
+    return self:HideDisplay(source), true
+end
+
+-- Who is currently holding a hide?
+function ER:GetHideSources()
+    local out = {}
+    for src in pairs(self.hiddenBy) do table.insert(out, src) end
+    table.sort(out)
+    return out
+end
 
 --------------------------------------------------------------------
 -- COOLDOWN CONTROL
@@ -284,6 +375,8 @@ function ER:RebuildDisplay()
     end
 end
 
+function ER:GetDisplayFrame() return frame end
+
 function ER:SetLocked(v)
     ElvinRotationDB.locked = v and true or false
     if frame then frame:EnableMouse(not ElvinRotationDB.locked) end
@@ -341,6 +434,13 @@ end
 
 function ER:UpdateDisplay(queue)
     if not frame then return end
+
+    -- An external hide beats everything, including the self-buff
+    -- warning, which is otherwise allowed to force the frame open.
+    if self:IsDisplayHidden() then
+        frame:Hide()
+        return
+    end
 
     local db = ElvinRotationDB
     local missing = self.state.missingSelfBuffs or {}
@@ -845,6 +945,27 @@ SlashCmdList["ELVINROTATION"] = function(msg)
         ER:Print("major cooldowns " ..
             (db.cooldownsOff and "|cffff5555OFF|r" or "|cff55ff55ON|r"))
 
+    elseif cmd == "hide" then
+        ER:HideDisplay("slash")
+        ER:Print("display hidden  (/er show to release)")
+
+    elseif cmd == "hidetoggle" or cmd == "ht" then
+        local _, nowHidden = ER:ToggleDisplay("slash")
+        ER:Print("display " .. (nowHidden and "hidden" or "shown"))
+        local held = ER:GetHideSources()
+        if not nowHidden and #held > 0 then
+            ER:Print("still hidden by: " .. table.concat(held, ", "))
+        end
+
+    elseif cmd == "show" then
+        ER:ShowDisplay("slash")
+        local held = ER:GetHideSources()
+        if #held > 0 then
+            ER:Print("still hidden by: " .. table.concat(held, ", "))
+        else
+            ER:Print("display shown")
+        end
+
     elseif cmd == "reset" then
         ElvinRotationDB = nil
         ER:Print("saved settings cleared - /reload to apply")
@@ -1008,6 +1129,10 @@ SlashCmdList["ELVINROTATION"] = function(msg)
             ER:Print("missing self buffs: " ..
                 (#mb > 0 and ("|cffff5555" .. table.concat(mb, ", ") .. "|r")
                           or "|cff55ff55none|r"))
+            local held = ER:GetHideSources()
+            if #held > 0 then
+                ER:Print("|cffffaa00display hidden by:|r " .. table.concat(held, ", "))
+            end
             ER:Print("pet: " .. tostring(ER.state.pet)
                 .. "   presence: " .. tostring(ER.state.presenceName)
                 .. "   enemies: " .. tostring(ER.state.activeEnemies))
@@ -1041,6 +1166,10 @@ SlashCmdList["ELVINROTATION"] = function(msg)
         if ER.lastError then ER:Print("|cffff5555last error:|r " .. ER.lastError) end
 
     else
-        ER:Print("version | spec | verify | dots | setkey | options | cd | aoe <auto|single|aoe> | keys | toggle | debug | lock | keybind | bars [spell] | queue <1-5> | size <n> | mb <auto|always|never> | sf <0-100> | state | reset")
+        -- Version in the help output. Twice now a command has looked
+        -- broken when the real problem was an older copy still
+        -- installed; this makes that obvious from the same screenshot.
+        ER:Print("|cff8080ffElvinRotation v" .. ER.VERSION .. "|r commands:")
+        ER:Print("version | spec | verify | dots | setkey | hide | show | hidetoggle | options | cd | aoe <auto|single|aoe> | keys | toggle | debug | lock | keybind | bars [spell] | queue <1-5> | size <n> | mb <auto|always|never> | sf <0-100> | state | reset")
     end
 end

@@ -2146,6 +2146,113 @@ step("the Rotation panel selects the spec you are playing", function()
         "the two Druid specs must be distinct tables")
 end)
 
+print("\n=== PUBLIC HIDE API ===")
+step("another addon can hide and release the display", function()
+    ER.hiddenBy = {}
+    assert(not ER:IsDisplayHidden(), "should start visible")
+
+    ER:HideDisplay("BossMod")
+    assert(ER:IsDisplayHidden(), "HideDisplay did nothing")
+
+    ER:ShowDisplay("BossMod")
+    assert(not ER:IsDisplayHidden(), "ShowDisplay did not release")
+end)
+
+step("two addons cannot un-hide each other", function()
+    -- The reason hides are tracked by source: whoever releases first
+    -- must not reveal the display while the other still wants it gone.
+    ER.hiddenBy = {}
+    ER:HideDisplay("BossMod")
+    ER:HideDisplay("Cinematics")
+    assert(ER:IsDisplayHidden(), "should be hidden")
+
+    ER:ShowDisplay("BossMod")
+    assert(ER:IsDisplayHidden(),
+        "released by one source while another still holds a hide")
+
+    ER:ShowDisplay("Cinematics")
+    assert(not ER:IsDisplayHidden(), "should be visible once all released")
+end)
+
+step("toggle flips the caller's own request", function()
+    ER.hiddenBy = {}
+    local _, nowHidden = ER:ToggleDisplay("MyAddon")
+    assert(nowHidden and ER:IsDisplayHidden(), "first toggle should hide")
+
+    local _, nowHidden2 = ER:ToggleDisplay("MyAddon")
+    assert(not nowHidden2 and not ER:IsDisplayHidden(),
+        "second toggle should show")
+end)
+
+step("toggle never releases another addon's hide", function()
+    -- If toggling cleared everyone's request, two addons sharing the
+    -- display would keep overriding each other.
+    ER.hiddenBy = {}
+    ER:HideDisplay("BossMod")
+    ER:ToggleDisplay("MyAddon")          -- adds a second hide
+    assert(ER:IsDisplayHidden(), "should be hidden by both")
+
+    ER:ToggleDisplay("MyAddon")          -- releases only mine
+    assert(ER:IsDisplayHidden(),
+        "toggling released the boss mod's hide as well")
+
+    ER:ShowDisplay("BossMod")
+    assert(not ER:IsDisplayHidden(), "should be visible once all released")
+end)
+
+step("a hide is not persisted to saved settings", function()
+    ER.hiddenBy = {}
+    ER:HideDisplay("Transient")
+    assert(ElvinRotationDB.hiddenBy == nil,
+        "an external hide must not be written to saved variables")
+    ER:ShowDisplay("Transient")
+end)
+
+step("callbacks fire on hide and show", function()
+    ER.hiddenBy, ER.callbacks = {}, {}
+    local seen = {}
+    ER:RegisterCallback("hidden", function(src) seen.hidden = src end, "Test")
+    ER:RegisterCallback("shown",  function(src) seen.shown  = src end, "Test")
+
+    ER:HideDisplay("Alpha")
+    assert(seen.hidden == "Alpha", "hidden callback did not fire")
+    ER:ShowDisplay("Alpha")
+    assert(seen.shown == "Alpha", "shown callback did not fire")
+    ER.callbacks = {}
+end)
+
+step("the callback fires once, not per source", function()
+    ER.hiddenBy, ER.callbacks = {}, {}
+    local n = 0
+    ER:RegisterCallback("hidden", function() n = n + 1 end, "Test")
+    ER:HideDisplay("A")
+    ER:HideDisplay("B")
+    assert(n == 1, "hidden callback fired " .. n .. " times, expected 1")
+    ER.hiddenBy, ER.callbacks = {}, {}
+end)
+
+step("a broken callback cannot break the addon", function()
+    ER.hiddenBy, ER.callbacks = {}, {}
+    ER:RegisterCallback("hidden", function() error("deliberate") end, "BadAddon")
+    ER:HideDisplay("X")           -- must not propagate
+    assert(ER:IsDisplayHidden(), "hide failed because a callback errored")
+    ER.hiddenBy, ER.callbacks = {}, {}
+end)
+
+step("a hidden display stays hidden through an update", function()
+    ER.hiddenBy = {}
+    ER:UpdateState()
+    ER.state.inCombat = true
+    ER:HideDisplay("BossMod")
+    ER:UpdateDisplay(ER:Recommend(3))
+
+    local f = ER:GetDisplayFrame()
+    assert(f, "no display frame exposed")
+    assert(not f:IsShown(), "display re-showed itself while externally hidden")
+
+    ER:ShowDisplay("BossMod")
+end)
+
 print("\n=== SELF BUFF WARNINGS ===")
 step("self buffs are tagged across specs", function()
     local tagged = 0

@@ -2,7 +2,7 @@
 ## Title: ElvinRotation
 ## Notes: Priority helper for WotLK 3.3.5a. All 23 DPS specs across all ten classes.
 ## Author: James
-## Version: 6.0
+## Version: 6.3
 ## SavedVariables: ElvinRotationDB
 
 Compat.lua

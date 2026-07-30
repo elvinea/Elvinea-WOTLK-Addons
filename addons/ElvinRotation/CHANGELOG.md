@@ -8,6 +8,84 @@ test. That pattern is worth preserving in the record.
 
 ---
 
+## 6.3
+
+- The command list now prints the version. Twice a command has looked broken
+  when the real cause was an older copy still installed; this makes that
+  obvious from the same screenshot.
+
+## 6.2
+
+- Added `ElvinRotation:ToggleDisplay(source)`, returning `ok, nowHidden`.
+  Scoped to the caller's own source, so toggling cannot release a hide
+  another addon is holding — otherwise two addons sharing the display would
+  override each other. `/er hidetoggle` does the same from chat.
+
+## 6.1
+
+- **Public API so other addons can hide the display.**
+
+  ```lua
+  ElvinRotation:HideDisplay("MyAddon")
+  ElvinRotation:ShowDisplay("MyAddon")
+  ```
+
+  Hides are tracked **by source**, so two addons can both request one and
+  neither reveals the display by releasing first. Also `SetDisplayHidden`,
+  `IsDisplayHidden`, `GetHideSources`, `GetDisplayFrame`, and
+  `RegisterCallback` for `"hidden"` and `"shown"`.
+
+  An external hide is runtime only and never written to saved variables — a
+  boss mod hiding the display for an encounter must not silently switch it
+  off permanently. It overrides everything else, including the self-buff
+  warning, which can otherwise force the frame open. A callback that errors
+  is caught and reported rather than breaking the addon.
+
+  `/er hide` and `/er show` do the same from chat.
+
+## 6.0
+
+No code changes. Version bump only, marking the point where the twelve specs
+tested so far are behaving and the keybind work has settled.
+
+- Added `TODO.md`: every item raised in testing, separated into open, fixed
+  (with the version that fixed it), answered-but-not-a-bug, and not possible.
+
+The keybind saga is worth recording as a lesson. It took roughly ten versions
+because I kept adding heuristics instead of asking two questions that would
+have solved it immediately: *how do you set your binds* (a mix of the WoW
+settings UI and `/kb`, which store bindings differently), and *does your class
+page its bars* (a warrior and a druid, so yes). The fix that finally worked
+came from a single line of `/er keys` output — Moonfire at slot 2 resolving
+while Wrath at slot 111 did not, on the same bar — which made the
+button-versus-slot distinction obvious.
+
+## 5.12
+
+- **Paged slots now resolve through their BUTTON binding.** `ACTIONBUTTON1-12`
+  are bound to the button, not the action slot. With bar 1 paged to page 10,
+  button 3 shows slot 111 — and the key that presses it is still
+  `ACTIONBUTTON3`. I was asking for a binding named after the slot. That is
+  why Moonfire (slot 2) resolved while Wrath (slot 111) did not, on the same
+  bar, on the same character.
+- **The off-GCD suggestion now uses a queue slot frame**, appearing in the row
+  you are already watching and tinted blue to read as "press this as well"
+  rather than "press this next". Two previous attempts put it on a standalone
+  icon off to one side, where it was never noticed.
+
+## 5.11
+
+- **Cleave and Heroic Strike now actually appear.** `evaluate()` returns at the
+  first usable ability, and both sit at the bottom of their lists — so
+  evaluation stopped at Bloodthirst or Whirlwind and never reached them. The
+  off-GCD hook was in the right place but could never fire. There is now a
+  dedicated pass that looks for queued abilities separately.
+
+## 5.10
+
+- `/er state` reports the current off-GCD suggestion, to distinguish "the
+  engine is not producing one" from "it is produced but not displayed".
+
 ## 5.9
 
 - **Paging affects every form and stance spec, not just warriors.** The bonus

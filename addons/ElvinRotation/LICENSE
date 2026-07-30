@@ -14,21 +14,32 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
---------------------------------------------------------------------
+====================================================================
 WHY GPL v3
---------------------------------------------------------------------
-This addon is a derivative work of Hekili (https://github.com/Hekili/hekili),
-which is licensed under GPL v3. The action priority lists and the
-flay_over_blast expression were translated from Hekili's `wrath` branch,
-and GPL v3 requires derivative works to carry the same licence.
+====================================================================
+This addon is a derivative work of Hekili
+(https://github.com/Hekili/hekili), which is licensed under GPL v3.
+The action priority lists and the flay_over_blast expression were
+translated from Hekili's `wrath` branch. GPL v3 requires derivative
+works to carry the same licence.
 
---------------------------------------------------------------------
-ACTION REQUIRED BEFORE PUBLISHING
---------------------------------------------------------------------
-Replace everything below this line with the full text of the GNU General
-Public License version 3, available at:
+====================================================================
+ONE STEP REMAINING BEFORE PUBLISHING
+====================================================================
+GPL v3 requires the FULL LICENCE TEXT to be distributed with the work.
+A notice alone is not sufficient. Replace everything below this line
+with the text from:
 
     https://www.gnu.org/licenses/gpl-3.0.txt
 
-A licence notice alone is not sufficient; GPL v3 requires the full text
-to be distributed with the work.
+From a terminal, in the repository root:
+
+    curl -o LICENSE.gpl https://www.gnu.org/licenses/gpl-3.0.txt
+    cat LICENSE.gpl >> LICENSE && rm LICENSE.gpl
+
+Or simply download that file and paste its contents here, removing
+this instruction block.
+
+--------------------------------------------------------------------
+[ FULL GPL v3 TEXT GOES HERE ]
+--------------------------------------------------------------------
